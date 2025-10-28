@@ -6,3 +6,5 @@ resources:
 - external-secrets/application.yaml
 - kyverno/application.yaml
 - reloader/application.yaml
+- nginx/namespace.yaml
+- vault/namespace.yaml
