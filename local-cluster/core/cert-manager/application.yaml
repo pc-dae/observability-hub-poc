@@ -12,8 +12,6 @@ spec:
     helm:
       values: |
         installCRDs: true
-        securityContext:
-          runAsNonRoot: true
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: cert-manager
