@@ -1,0 +1,2 @@
+dnsSuffix: kubernetes.docker.internal
+storageClass: standard
