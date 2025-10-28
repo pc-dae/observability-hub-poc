@@ -5,6 +5,4 @@ resources:
 - csi/application.yaml
 - external-secrets/application.yaml
 - kyverno/application.yaml
-- nginx/application.yaml
 - reloader/application.yaml
-- vault-application.yaml
