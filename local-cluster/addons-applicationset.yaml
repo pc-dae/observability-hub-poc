@@ -1,0 +1,64 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: cluster-services
+  namespace: argocd
+spec:
+  generators:
+  - list:
+      elements:
+      - name: grafana
+        namespace: grafana
+        chart: grafana
+        repo: https://grafana.github.io/helm-charts
+        version: 6.58.5
+        values:
+          adminPassword: "admin"
+          ingress:
+            enabled: true
+            hosts:
+              - grafana.{{.dnsSuffix}}
+          datasources:
+            datasources.yaml:
+              apiVersion: 1
+              datasources:
+                - name: Mimir
+                  type: prometheus
+                  url: http://mimir.monitoring.svc.cluster.local/prometheus
+                  access: proxy
+                  isDefault: true
+                - name: Loki
+                  type: loki
+                  url: http://loki.monitoring.svc.cluster.local/loki
+                  access: proxy
+                - name: Tempo
+                  type: tempo
+                  url: http://tempo.monitoring.svc.cluster.local
+                  access: proxy
+  - git:
+      repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+      revision: main
+      files:
+      - path: "local-cluster/config/cluster-params.yaml"
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: '{{.repo}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.version}}'
+        helm:
+          values: |
+            {{- toYaml .values | nindent 12 }}
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true

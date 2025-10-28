@@ -57,10 +57,6 @@ kubectl wait --for=condition=Available  -n kube-system deployment coredns
 
 git config pull.rebase true
 
-kubectl apply -f local-cluster/core-services.yaml
-kubectl apply -f local-cluster/addons.yaml
-kubectl apply -f local-cluster/applicationset.yaml
-
 kubectl apply -f local-cluster/core/argocd/namespace.yaml
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
@@ -77,6 +73,8 @@ else
     git push
   fi
 fi
+
+kubectl apply -f local-cluster/core-services.yaml
 
 # Install CA Certificate secret so Cert Manager can issue certificates using our CA
 
@@ -103,6 +101,19 @@ for nameSpace in $(cat $namespace_list); do
   kubectl apply -f /tmp/ca.yaml
 done
 
+cat <<EOF > local-cluster/config/cluster-params.yaml
+dnsSuffix: ${local_dns}
+storageClass: standard
+EOF
+git add local-cluster/config/cluster-params.yaml
+if [[ `git status --porcelain` ]]; then
+  git commit -m "update cluster params with dns suffix"
+  git pull
+  git push
+fi
+
+kubectl apply -f local-cluster/ingress-appset.yaml
+
 if [ "$wait" == "1" ]; then
   # Wait for ingress controller to start
   echo "Waiting for ingress controller to start"
@@ -111,20 +122,19 @@ if [ "$wait" == "1" ]; then
 fi
 export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
 
-export namespace=argocd
-cat $(local_or_global resources/cluster-config.yaml) | envsubst > local-cluster/config/cluster-config.yaml
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
 clusterIP: ${CLUSTER_IP}
 storageClass: standard
 EOF
-git add local-cluster/config/cluster-config.yaml
 git add local-cluster/config/cluster-params.yaml
 if [[ `git status --porcelain` ]]; then
-  git commit -m "update cluster config"
+  git commit -m "update cluster params with cluster IP"
   git pull
   git push
 fi
+
+kubectl apply -f local-cluster/core-appset.yaml
 
 # Wait for vault to start
 while ( true ); do
@@ -160,32 +170,7 @@ secrets.sh $debug_str --tls-skip --secrets $PWD/resources/secrets
 
 kubectl rollout restart deployment -n external-secrets external-secrets
 
-yq '.addons[].name' resource-descriptions/addons.yaml | while read -r addonName
-do
-  export addonName
-  cat $(local_or_global resources/addon-ks.yaml) | envsubst > local-cluster/addons/${addonName}-ks.yaml
-done
-
-yq '.namespaces[].name' resource-descriptions/namespaces.yaml | while read -r nameSpace; do
-  export nameSpace
-  cat $(local_or_global resources/namespace-ks.yaml) | envsubst > local-cluster/namespaces/${nameSpace}-ks.yaml
-done
-
-yq '.apps[] | .name, .namespace, .registry, .repo' resource-descriptions/apps.yaml | \
-  while read -r APP_NAME && read -r NAMESPACE_NAME && read -r REGISTRY_NAME && read -r REPO_NAME
-do
-  echo "Found app: ${APP_NAME}, in namespace: ${NAMESPACE_NAME}"
-  export nameSpace="${NAMESPACE_NAME}"
-  export appName="${APP_NAME}"
-  export registryName="${REGISTRY_NAME}"
-  export repoName="${REPO_NAME}"
-  cat $(local_or_global resources/app-ks.yaml) | envsubst > local-cluster/apps/${nameSpace}-ks.yaml
-  vault-app-secrets-config.sh $debug_str --tls-skip
-done
-
-git add local-cluster/namespaces
-if [[ `git status --porcelain` ]]; then
-  git commit -m "Add namespaces and apps"
-  git pull
-  git push
-fi
+kubectl apply -f local-cluster/addons.yaml
+kubectl apply -f local-cluster/core-appset.yaml
+kubectl apply -f local-cluster/apps.yaml
+kubectl apply -f local-cluster/apps-appset.yaml
