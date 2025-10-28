@@ -1,0 +1,34 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: kafka
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: 'registry-1.docker.io/bitnamicharts'
+    chart: kafka
+    targetRevision: 31.2.0
+    helm:
+      values: |
+        provisioning:
+          enabled: true
+          automountServiceAccountToken: true
+          numPartitions: 1
+          replicationFactor: 1
+          topics:
+            - name: infra
+              partitions: 1
+              replicationFactor: 1
+              config:
+                max.message.bytes: 64000
+                flush.messages: 1
+  destination:
+    server: 'https://kubernetes.default.svc'
+    namespace: kafka
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true

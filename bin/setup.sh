@@ -51,71 +51,18 @@ fi
 b64w=""
 
 export LOCAL_DNS="$local_dns"
-kubectl apply -f local-cluster/core/argocd/namespace.yaml
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
-
 
 echo "Waiting for cluster to be ready"
 kubectl wait --for=condition=Available  -n kube-system deployment coredns
 
 git config pull.rebase true
 
-# Install Flux if not present or force reinstall option set
+kubectl apply -f local-cluster/core-services.yaml
+kubectl apply -f local-cluster/addons.yaml
+kubectl apply -f local-cluster/applicationset.yaml
 
-if [[ $bootstrap -eq 0 ]]; then
-  set +e
-  kubectl get ns | grep flux-system
-  bootstrap=$?
-  set -e
-fi
-
-if [[ $bootstrap -eq 0 ]]; then
-  echo "flux already deployed, skipping bootstrap"
-else
-  if [[ $reset -eq 1 ]]; then
-    echo "uninstalling flux"
-    flux uninstall --silent --keep-namespace
-    if [ -e $target_path/flux/flux-system ]; then
-      rm -rf $target_path/flux/flux-system
-      git add $target_path/flux/flux-system
-      if [[ `git status --porcelain` ]]; then
-        git commit -m "remove flux-system from cluster repo"
-        git pull
-        git push
-      fi
-    fi
-  fi
-
-  kustomize build ${config_dir}/local-cluster/core/flux/${FLUX_VERSION} | kubectl apply -f-
-  source resources/github-secrets.sh
-
-  # Create a secret for flux to use to access the git repo backing the cluster, using write token - write access needed by image automation
-
-  kubectl apply -f - <<EOF
-apiVersion: v1
-kind: Secret
-metadata:
-  name: flux-system
-  namespace: flux-system
-data:
-  username: $(echo -n "git" | base64 ${b64w})
-  password: $(echo -n "$GITHUB_TOKEN_WRITE" | base64 ${b64w})
-EOF
-
-  # Create flux-system GitRepository and Kustomization
-
-  # git pull
-  mkdir -p $target_path/flux/flux-system
-  cat $(local_or_global resources/gotk-sync.yaml) | envsubst > $target_path/flux/flux-system/gotk-sync.yaml
-  git add $target_path/flux/flux-system/gotk-sync.yaml
-  if [[ `git status --porcelain` ]]; then
-    git commit -m "update flux-system gotk-sync.yaml"
-    git pull
-    git push
-  fi
-
-  kubectl apply -f $target_path/flux/flux-system/gotk-sync.yaml
-fi
+kubectl apply -f local-cluster/core/argocd/namespace.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 # Create a CA Certificate for the ingress controller to use
 
@@ -157,32 +104,27 @@ for nameSpace in $(cat $namespace_list); do
 done
 
 if [ "$wait" == "1" ]; then
-  echo "Waiting for flux to flux-system Kustomization to be ready"
-  sleep 3
-  flux reconcile kustomization flux-system
-  flux reconcile kustomization flux-components
-  kubectl wait --timeout=5m --for=condition=Ready kustomizations.kustomize.toolkit.fluxcd.io -n flux-system flux-system
-fi
-
-if [ "$wait" == "1" ]; then
   # Wait for ingress controller to start
   echo "Waiting for ingress controller to start"
-  kubectl wait --timeout=5m --for=condition=Ready kustomizations.kustomize.toolkit.fluxcd.io -n flux-system nginx
+  kubectl wait --timeout=5m --for=condition=Ready -n ingress-nginx deployment ingress-nginx-controller
   sleep 5
 fi
 export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
 
-export namespace=flux-system
+export namespace=argocd
 cat $(local_or_global resources/cluster-config.yaml) | envsubst > local-cluster/config/cluster-config.yaml
+cat <<EOF > local-cluster/config/cluster-params.yaml
+dnsSuffix: ${local_dns}
+clusterIP: ${CLUSTER_IP}
+storageClass: standard
+EOF
 git add local-cluster/config/cluster-config.yaml
+git add local-cluster/config/cluster-params.yaml
 if [[ `git status --porcelain` ]]; then
   git commit -m "update cluster config"
   git pull
   git push
 fi
-
-# Ensure that the git source is updated after pushing to the remote
-flux reconcile source git -n flux-system flux-system
 
 # Wait for vault to start
 while ( true ); do
