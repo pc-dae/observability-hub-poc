@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: vault-token
+  namespace: vault
+data:
+  vault_token: $VAULT_TOKEN

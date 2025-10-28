@@ -1,0 +1,9 @@
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kafka
+  namespace: kafka
+spec:
+  interval: 1h0s
+  type: "oci"
+  url: oci://registry-1.docker.io/bitnamicharts

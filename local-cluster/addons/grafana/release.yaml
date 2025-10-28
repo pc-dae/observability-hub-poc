@@ -1,0 +1,38 @@
+apiVersion: helm.toolkit.fluxcd.io/v2beta1
+kind: HelmRelease
+metadata:
+  name: grafana
+  namespace: grafana
+spec:
+  interval: 5m
+  chart:
+    spec:
+      chart: grafana
+      version: "6.58.5"
+      sourceRef:
+        kind: HelmRepository
+        name: grafana
+        namespace: flux-system
+  values:
+    adminPassword: "admin" # Change this in a real environment
+    ingress:
+      enabled: true
+      hosts:
+        - grafana.${LOCAL_DNS}
+    datasources:
+      datasources.yaml:
+        apiVersion: 1
+        datasources:
+          - name: Mimir
+            type: prometheus
+            url: http://mimir.monitoring.svc.cluster.local/prometheus
+            access: proxy
+            isDefault: true
+          - name: Loki
+            type: loki
+            url: http://loki.monitoring.svc.cluster.local/loki
+            access: proxy
+          - name: Tempo
+            type: tempo
+            url: http://tempo.monitoring.svc.cluster.local
+            access: proxy
