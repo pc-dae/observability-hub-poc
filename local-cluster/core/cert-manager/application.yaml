@@ -12,8 +12,15 @@ spec:
     helm:
       values: |
         installCRDs: true
-        securityContext:
-          runAsNonRoot: false
+        cainjector:
+          securityContext:
+            runAsNonRoot: false
+        controller:
+          securityContext:
+            runAsNonRoot: false
+        webhook:
+          securityContext:
+            runAsNonRoot: false
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: cert-manager
