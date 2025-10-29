@@ -12,6 +12,19 @@ spec:
     helm:
       values: |
         installCRDs: true
+      postRenderer:
+        kustomize:
+          patches:
+          - target:
+              group: apiextensions.k8s.io
+              version: v1
+              kind: CustomResourceDefinition
+              annotationSelector: helm.sh/hook=crd-install
+            patch: |
+              - op: remove
+                path: /metadata/annotations/meta.helm.sh~1release-name
+              - op: remove
+                path: /metadata/annotations/meta.helm.sh~1release-namespace
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kyverno
