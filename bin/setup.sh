@@ -122,17 +122,16 @@ if [[ `git status --porcelain` ]]; then
   git push
 fi
 
+# Apply the ingress appset
 kubectl apply -f local-cluster/ingress-appset.yaml
 
-if [ "$wait" == "1" ]; then
-  # Wait for ingress controller to start
-  echo "Waiting for ingress controller to start"
-  sleep 15
-  kubectl wait --timeout=5m --for=condition=Ready -n ingress-nginx deployment ingress-nginx-controller
-  sleep 5
-fi
+# Wait for ingress controller to start
+echo "Waiting for ingress controller to start"
+kubectl wait --timeout=5m --for=condition=Ready -n ingress-nginx deployment ingress-nginx-controller
+sleep 5
 export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
 
+# Now that we have the cluster IP, update the params file and push to git again
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
 clusterIP: ${CLUSTER_IP}
@@ -145,6 +144,7 @@ if [[ `git status --porcelain` ]]; then
   git push
 fi
 
+# With the full params in git, we can now apply the other appsets
 kubectl apply -f local-cluster/core-appset.yaml
 
 # Wait for vault to start
@@ -182,6 +182,5 @@ secrets.sh $debug_str --tls-skip --secrets $PWD/resources/secrets
 kubectl rollout restart deployment -n external-secrets external-secrets
 
 kubectl apply -f local-cluster/addons.yaml
-kubectl apply -f local-cluster/core-appset.yaml
 kubectl apply -f local-cluster/apps.yaml
 kubectl apply -f local-cluster/apps-appset.yaml

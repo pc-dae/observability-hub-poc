@@ -16,7 +16,7 @@ spec:
           controller:
             service:
               annotations:
-                external-dns.alpha.kubernetes.io/hostname: '{{ .dnsSuffix | default "local" }}'
+                external-dns.alpha.kubernetes.io/hostname: '{{.dnsSuffix}}'
             ingressClassResource:
               default: "true"
             watchIngressWithoutClass: "true"
