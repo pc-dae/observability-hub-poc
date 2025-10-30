@@ -11,7 +11,7 @@ spec:
         generators:
           - list:
               elements:
-                - name: ingress-nginx
+                - name: ingress
                   namespace: ingress-nginx
                   chart: ingress-nginx
                   repo: https://kubernetes.github.io/ingress-nginx
