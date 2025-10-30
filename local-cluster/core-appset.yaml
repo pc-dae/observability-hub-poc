@@ -6,6 +6,8 @@ metadata:
 spec:
   generators:
     - merge:
+        mergeKeys:
+          - name
         generators:
           - list:
               elements:
