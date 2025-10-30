@@ -126,6 +126,7 @@ kubectl apply -f local-cluster/ingress-appset.yaml
 if [ "$wait" == "1" ]; then
   # Wait for ingress controller to start
   echo "Waiting for ingress controller to start"
+  sleep 15
   kubectl wait --timeout=5m --for=condition=Ready -n ingress-nginx deployment ingress-nginx-controller
   sleep 5
 fi
