@@ -122,6 +122,11 @@ if [[ `git status --porcelain` ]]; then
   git push
 fi
 
+# Force a refresh of the Argo CD repo server to pick up the latest git changes
+echo "Refreshing Argo CD repository cache..."
+kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
+
 # Apply the ingress appset
 kubectl apply -f local-cluster/ingress-appset.yaml
 
@@ -157,6 +162,11 @@ if [[ `git status --porcelain` ]]; then
   git pull
   git push
 fi
+
+# Force another refresh so it picks up the clusterIP
+echo "Refreshing Argo CD repository cache..."
+kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
 
 # With the full params in git, we can now apply the other appsets
 kubectl apply -f local-cluster/core-appset.yaml
