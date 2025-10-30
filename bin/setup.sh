@@ -60,6 +60,8 @@ git config pull.rebase true
 kubectl apply -f local-cluster/core/argocd/namespace.yaml
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
+PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) && argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure
+
 # Create a CA Certificate for the ingress controller to use
 
 if [ -f resources/CA.cer ]; then
