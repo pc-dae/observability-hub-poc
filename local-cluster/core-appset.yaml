@@ -12,53 +12,6 @@ spec:
         chart: vault
         repo: https://helm.releases.hashicorp.com
         version: 0.29.1
-        values:
-          global:
-            enabled: true
-          csi:
-            enabled: true
-          injector:
-            enabled: true
-          server:
-            enabled: true
-            dataStorage:
-              storageClass: '{{.storageClass}}'
-            serviceAccount:
-              name: vault
-            standalone:
-              config: |
-                ui = true
-                listener "tcp" {
-                  tls_disable = 1
-                  address = "[::]:8200"
-                  cluster_address = "[::]:8201"
-                }
-                storage "file" {
-                  path = "/vault/data"
-                }
-            ingress:
-              enabled: true
-              ingressClassName: nginx
-              annotations:
-                cert-manager.io/cluster-issuer: local-ca-issuer
-              tls:
-                - secretName: vault-tls
-                  hosts:
-                    - vault.{{.dnsSuffix}}
-              hosts:
-                - host: vault.{{.dnsSuffix}}
-            extraVolumes:
-            - type: configMap
-              name: local-ca
-            extraVolumeMounts:
-            - name: local-ca
-              mountPath: /etc/ssl/certs/local-ca.pem
-              subPath: CA.cer
-              readOnly: false
-            hostAliases:
-            - ip: '{{.clusterIP}}'
-              hostnames:
-              - vault.{{.dnsSuffix}}
   - git:
       repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
       revision: main
@@ -76,7 +29,52 @@ spec:
         targetRevision: '{{.version}}'
         helm:
           values: |
-            {{- toYaml .values | nindent 12 }}
+            global:
+              enabled: true
+            csi:
+              enabled: true
+            injector:
+              enabled: true
+            server:
+              enabled: true
+              dataStorage:
+                storageClass: '{{.storageClass}}'
+              serviceAccount:
+                name: vault
+              standalone:
+                config: |
+                  ui = true
+                  listener "tcp" {
+                    tls_disable = 1
+                    address = "[::]:8200"
+                    cluster_address = "[::]:8201"
+                  }
+                  storage "file" {
+                    path = "/vault/data"
+                  }
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: local-ca-issuer
+                tls:
+                  - secretName: vault-tls
+                    hosts:
+                      - vault.{{.dnsSuffix}}
+                hosts:
+                  - host: vault.{{.dnsSuffix}}
+              extraVolumes:
+              - type: configMap
+                name: local-ca
+              extraVolumeMounts:
+              - name: local-ca
+                mountPath: /etc/ssl/certs/local-ca.pem
+                subPath: CA.cer
+                readOnly: false
+              hostAliases:
+              - ip: '{{.clusterIP}}'
+                hostnames:
+                - vault.{{.dnsSuffix}}
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
