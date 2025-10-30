@@ -22,7 +22,7 @@ spec:
           server:
             enabled: true
             dataStorage:
-              storageClass: '{{ .storageClass | default "standard" }}'
+              storageClass: '{{.storageClass}}'
             serviceAccount:
               name: vault
             standalone:
@@ -44,9 +44,9 @@ spec:
               tls:
                 - secretName: vault-tls
                   hosts:
-                    - vault.{{ .dnsSuffix | default "local" }}
+                    - vault.{{.dnsSuffix}}
               hosts:
-                - host: vault.{{ .dnsSuffix | default "local" }}
+                - host: vault.{{.dnsSuffix}}
             extraVolumes:
             - type: configMap
               name: local-ca
@@ -56,9 +56,9 @@ spec:
               subPath: CA.cer
               readOnly: false
             hostAliases:
-            - ip: '{{ .clusterIP | default "127.0.0.1" }}'
+            - ip: '{{.clusterIP}}'
               hostnames:
-              - vault.{{ .dnsSuffix | default "local" }}
+              - vault.{{.dnsSuffix}}
   - git:
       repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
       revision: main

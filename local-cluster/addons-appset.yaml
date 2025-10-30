@@ -17,7 +17,7 @@ spec:
           ingress:
             enabled: true
             hosts:
-              - grafana.{{ .dnsSuffix | default "local" }}
+              - grafana.{{.dnsSuffix}}
           datasources:
             datasources.yaml:
               apiVersion: 1
