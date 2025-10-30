@@ -5,18 +5,20 @@ metadata:
   namespace: argocd
 spec:
   generators:
-  - list:
-      elements:
-      - name: grafana
-        namespace: grafana
-        chart: grafana
-        repo: https://grafana.github.io/helm-charts
-        version: 6.58.5
-  - git:
-      repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
-      revision: main
-      files:
-      - path: "local-cluster/config/cluster-params.yaml"
+    - merge:
+        generators:
+          - list:
+              elements:
+                - name: grafana
+                  namespace: grafana
+                  chart: grafana
+                  repo: https://grafana.github.io/helm-charts
+                  version: 6.58.5
+          - git:
+              repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+              revision: main
+              files:
+                - path: "local-cluster/config/cluster-params.yaml"
   template:
     metadata:
       name: '{{.name}}'
