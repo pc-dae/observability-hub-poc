@@ -5,9 +5,7 @@ metadata:
   namespace: argocd
 spec:
   generators:
-    - merge:
-        mergeKeys:
-          - name
+    - matrix:
         generators:
           - list:
               elements:
