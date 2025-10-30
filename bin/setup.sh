@@ -84,31 +84,6 @@ else
   fi
 fi
 
-# Bootstrap the ingress controller as a standalone application
-envsubst < local-cluster/ingress-application.yaml | kubectl apply -f -
-
-echo "Waiting for ingress controller to start"
-kubectl wait --timeout=5m --for=condition=Ready -n ingress-nginx deployment ingress-nginx-controller
-sleep 5
-export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
-
-# Now that we have the cluster IP, create the params file and push to git
-cat <<EOF > local-cluster/config/cluster-params.yaml
-dnsSuffix: ${local_dns}
-clusterIP: ${CLUSTER_IP}
-storageClass: standard
-EOF
-git add local-cluster/config/cluster-params.yaml
-if [[ `git status --porcelain` ]]; then
-  git commit -m "update cluster params"
-  git pull
-  git push
-fi
-
-# With params in git, we can now apply the appsets
-kubectl apply -f local-cluster/core-appset.yaml
-kubectl apply -f local-cluster/addons-appset.yaml
-
 kubectl apply -f local-cluster/core-services.yaml
 
 # Install CA Certificate secret so Cert Manager can issue certificates using our CA
@@ -135,6 +110,42 @@ for nameSpace in $(cat $namespace_list); do
   kubectl create configmap local-ca -n ${nameSpace} --from-file=resources/CA.cer --dry-run=client -o yaml >/tmp/ca.yaml
   kubectl apply -f /tmp/ca.yaml
 done
+
+cat <<EOF > local-cluster/config/cluster-params.yaml
+dnsSuffix: ${local_dns}
+storageClass: standard
+EOF
+git add local-cluster/config/cluster-params.yaml
+if [[ `git status --porcelain` ]]; then
+  git commit -m "update cluster params with dns suffix"
+  git pull
+  git push
+fi
+
+kubectl apply -f local-cluster/ingress-appset.yaml
+
+if [ "$wait" == "1" ]; then
+  # Wait for ingress controller to start
+  echo "Waiting for ingress controller to start"
+  sleep 15
+  kubectl wait --timeout=5m --for=condition=Ready -n ingress-nginx deployment ingress-nginx-controller
+  sleep 5
+fi
+export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
+
+cat <<EOF > local-cluster/config/cluster-params.yaml
+dnsSuffix: ${local_dns}
+clusterIP: ${CLUSTER_IP}
+storageClass: standard
+EOF
+git add local-cluster/config/cluster-params.yaml
+if [[ `git status --porcelain` ]]; then
+  git commit -m "update cluster params with cluster IP"
+  git pull
+  git push
+fi
+
+kubectl apply -f local-cluster/core-appset.yaml
 
 # Wait for vault to start
 while ( true ); do
@@ -171,5 +182,6 @@ secrets.sh $debug_str --tls-skip --secrets $PWD/resources/secrets
 kubectl rollout restart deployment -n external-secrets external-secrets
 
 kubectl apply -f local-cluster/addons.yaml
+kubectl apply -f local-cluster/core-appset.yaml
 kubectl apply -f local-cluster/apps.yaml
 kubectl apply -f local-cluster/apps-appset.yaml
