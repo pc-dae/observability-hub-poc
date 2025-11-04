@@ -132,23 +132,23 @@ kubectl apply -f local-cluster/ingress-appset.yaml
 
 # Wait for the ApplicationSet controller to create the Application
 sleep 5
-echo "Waiting for Argo CD ApplicationSet to generate the ingress-nginx application..."
+echo "Waiting for Argo CD ApplicationSet to generate the ingress application..."
 kubectl wait --for=condition=ResourcesUpToDate=True applicationset/ingress-appset -n argocd --timeout=2m
 echo "ApplicationSet 'ingress-appset' is up to date."
 
-# Wait for the ingress-nginx application to be healthy
+# Wait for the ingress application to be healthy
 sleep 5
-echo "Waiting for the ingress-nginx application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress-nginx -n argocd --timeout=5m
-echo "Application 'ingress-nginx' is healthy."
+echo "Waiting for the ingress application to become healthy..."
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
+echo "Application 'ingress' is healthy."
 
 sleep 5
-echo "Waiting for the ingress-nginx application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress-nginx -n argocd --timeout=5m
-echo "Application 'ingress-nginx' is healthy."
+echo "Waiting for the ingress application to become healthy..."
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
+echo "Application 'ingress' is healthy."
 
 sleep 5
-export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
+export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-controller -o jsonpath='{.spec.clusterIP}')
 
 # Now that we have the cluster IP, update the params file and push to git again
 cat <<EOF > local-cluster/config/cluster-params.yaml
