@@ -75,7 +75,7 @@ done
 echo "Argo CD port-forward is ready."
 sleep 5
 
-argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure
+argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure --skip-test-tls  
 
 # Create a CA Certificate for the ingress controller to use
 
