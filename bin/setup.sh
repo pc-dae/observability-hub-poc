@@ -146,12 +146,12 @@ echo "ApplicationSet 'ingress' is up to date."
 # Wait for the ingress-nginx application to be healthy
 sleep 5
 echo "Waiting for the ingress-nginx application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress-nginx -n argocd --timeout=5m
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
 
 sleep 5
 echo "Waiting for the ingress-nginx application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress-nginx -n argocd --timeout=5m
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
 
 sleep 5
