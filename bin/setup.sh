@@ -65,8 +65,8 @@ sleep 5
 kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-server
 sleep 2
 
-PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/tmp/argocd-port-forward.log 2>&1 &
+PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d) && argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure
+nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
 sleep 5
 argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure
 
@@ -132,23 +132,23 @@ kubectl apply -f local-cluster/ingress-appset.yaml
 
 # Wait for the ApplicationSet controller to create the Application
 sleep 5
-echo "Waiting for Argo CD ApplicationSet to generate the ingress application..."
+echo "Waiting for Argo CD ApplicationSet to generate the ingress-nginx application..."
 kubectl wait --for=condition=ResourcesUpToDate=True applicationset/ingress-appset -n argocd --timeout=2m
 echo "ApplicationSet 'ingress-appset' is up to date."
 
-# Wait for the ingress application to be healthy
+# Wait for the ingress-nginx application to be healthy
 sleep 5
-echo "Waiting for the ingress application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
-echo "Application 'ingress' is healthy."
+echo "Waiting for the ingress-nginx application to become healthy..."
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress-nginx -n argocd --timeout=5m
+echo "Application 'ingress-nginx' is healthy."
 
 sleep 5
-echo "Waiting for the ingress application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
-echo "Application 'ingress' is healthy."
+echo "Waiting for the ingress-nginx application to become healthy..."
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress-nginx -n argocd --timeout=5m
+echo "Application 'ingress-nginx' is healthy."
 
 sleep 5
-export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-controller -o jsonpath='{.spec.clusterIP}')
+export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
 
 # Now that we have the cluster IP, update the params file and push to git again
 cat <<EOF > local-cluster/config/cluster-params.yaml
@@ -169,7 +169,19 @@ kubectl rollout restart deployment argocd-repo-server -n argocd
 kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
 
 # With the full params in git, we can now apply the other appsets
-kubectl apply -f local-cluster/core-appset.yaml
+kubectl apply -f local-cluster/vault-appset.yaml
+
+# Wait for the ApplicationSet controller to create the Application
+sleep 5
+echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
+kubectl wait --for=condition=ResourcesUpToDate=True applicationset/vault-appset -n argocd --timeout=2m
+echo "ApplicationSet 'ingress-appset' is up to date."
+
+# Wait for the vault application to be healthy
+sleep 5
+echo "Waiting for the vault application to become healthy..."
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/vault -n argocd --timeout=5m
+echo "Application 'vault' is healthy."
 
 # Wait for vault to start
 while ( true ); do

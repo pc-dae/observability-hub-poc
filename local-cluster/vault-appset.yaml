@@ -1,11 +1,13 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: core-appset
+  name: vault-appset
   namespace: argocd
 spec:
   generators:
-    - matrix:
+    - merge:
+        mergeKeys:
+          - name
         generators:
           - list:
               elements:

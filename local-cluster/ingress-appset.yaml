@@ -5,7 +5,9 @@ metadata:
   namespace: argocd
 spec:
   generators:
-    - matrix:
+    - merge:
+        mergeKeys:
+          - name
         generators:
           - list:
               elements:
@@ -21,26 +23,26 @@ spec:
                 - path: "local-cluster/config/cluster-params.yaml"
   template:
     metadata:
-      name: ingress
+      name: '{{.name}}'
       namespace: argocd
     spec:
       project: default
       source:
-        repoURL: '{{repo}}'
-        chart: '{{chart}}'
-        targetRevision: '{{version}}'
+        repoURL: '{{.repo}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.version}}'
         helm:
           values: |
             controller:
               service:
                 annotations:
-                  external-dns.alpha.kubernetes.io/hostname: '{{dnsSuffix}}'
+                  external-dns.alpha.kubernetes.io/hostname: '{{.dnsSuffix}}'
               ingressClassResource:
                 default: "true"
               watchIngressWithoutClass: "true"
       destination:
         server: 'https://kubernetes.default.svc'
-        namespace: '{{namespace}}'
+        namespace: '{{.namespace}}'
       syncPolicy:
         automated:
           prune: true
