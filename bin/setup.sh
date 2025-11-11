@@ -133,8 +133,8 @@ kubectl apply -f local-cluster/ingress-appset.yaml
 # Wait for the ApplicationSet controller to create the Application
 sleep 5
 echo "Waiting for Argo CD ApplicationSet to generate the ingress-nginx application..."
-kubectl wait --for=condition=ResourcesUpToDate=True applicationset/ingress-appset -n argocd --timeout=2m
-echo "ApplicationSet 'ingress-appset' is up to date."
+kubectl wait --for=condition=ResourcesUpToDate=True applicationset/ingress -n argocd --timeout=2m
+echo "ApplicationSet 'ingress' is up to date."
 
 # Wait for the ingress-nginx application to be healthy
 sleep 5
@@ -174,8 +174,8 @@ kubectl apply -f local-cluster/vault-appset.yaml
 # Wait for the ApplicationSet controller to create the Application
 sleep 5
 echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
-kubectl wait --for=condition=ResourcesUpToDate=True applicationset/vault-appset -n argocd --timeout=2m
-echo "ApplicationSet 'ingress-appset' is up to date."
+kubectl wait --for=condition=ResourcesUpToDate=True applicationset/vault -n argocd --timeout=2m
+echo "ApplicationSet 'vault' is up to date."
 
 # Wait for the vault application to be healthy
 sleep 5
