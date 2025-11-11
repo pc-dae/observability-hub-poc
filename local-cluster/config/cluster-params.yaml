@@ -1,3 +1,2 @@
 dnsSuffix: kubernetes.docker.internal
-clusterIP: 
 storageClass: standard
