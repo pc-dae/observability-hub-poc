@@ -9,7 +9,8 @@ spec:
       generators:
           - list:
               elements:
-                - namespace: ingress-nginx
+                - name: ingress
+                  namespace: ingress-nginx
                   chart: ingress-nginx
                   repo: https://kubernetes.github.io/ingress-nginx
                   version: 4.12.0
@@ -17,10 +18,10 @@ spec:
               repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
               revision: main
               files:
-                - path: ./local-cluster/config/cluster-params.yaml
+                - path: local-cluster/config/cluster-params.yaml
   template:
     metadata:
-      name: ingress
+      name: '{{.name}}'
       namespace: argocd
     spec:
       project: default
