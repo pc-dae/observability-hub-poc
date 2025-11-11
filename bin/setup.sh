@@ -149,12 +149,12 @@ echo "Waiting for the ingress-nginx application to become healthy..."
 kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
 
-sleep 5
-echo "Waiting for the ingress-nginx application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
-echo "Application 'ingress-nginx' is healthy."
+echo "Waiting for ingress service to be created..."
+while ! kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller > /dev/null 2>&1; do
+    sleep 2
+done
+echo "Ingress service found."
 
-sleep 10
 export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
 
 # Now that we have the cluster IP, update the params file and push to git again
