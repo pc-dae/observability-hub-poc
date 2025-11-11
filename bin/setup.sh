@@ -58,7 +58,7 @@ kubectl wait --for=condition=Available  -n kube-system deployment coredns
 git config pull.rebase true
 
 kubectl apply -f local-cluster/core/argocd/namespace.yaml
-kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/v2.12.0/manifests/install.yaml
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 echo "Waiting for argocd controller to start"
 sleep 5
