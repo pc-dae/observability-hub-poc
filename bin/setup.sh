@@ -91,7 +91,8 @@ else
   fi
 fi
 
-argocd app create core-services --repo https://github.com/pc-dae/observability-hub-poc.git --path local-cluster/core --dest-server https://kubernetes.default.svc --dest-namespace argocd --sync
+argocd app create core-services --repo https://github.com/pc-dae/observability-hub-poc.git --path local-cluster/core --dest-server https://kubernetes.default.svc --dest-namespace argocd
+argocd app sync core-services
 
 # Install CA Certificate secret so Cert Manager can issue certificates using our CA
 
