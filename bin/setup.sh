@@ -184,11 +184,17 @@ echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
 kubectl wait --for=condition=ResourcesUpToDate=True applicationset/vault -n argocd --timeout=2m
 echo "ApplicationSet 'vault' is up to date."
 
-# Wait for the vault application to be healthy
-sleep 5
-echo "Waiting for the vault application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/vault -n argocd --timeout=5m
-echo "Application 'vault' is healthy."
+# Wait for vault to start
+while ( true ); do
+  echo "Waiting for vault to start"
+  set +e
+  started="$(kubectl get pod/vault-0 -n vault -o json 2>/dev/null | jq -r '.status.containerStatuses[0].started')"
+  set -e
+  if [ "$started" == "true" ]; then
+    break
+  fi
+  sleep 5
+done
 
 # Wait for vault to start
 while ( true ); do
