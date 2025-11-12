@@ -92,6 +92,7 @@ else
 fi
 
 kubectl apply -f local-cluster/core-services.yaml
+sleep 30
 
 # Install CA Certificate secret so Cert Manager can issue certificates using our CA
 
