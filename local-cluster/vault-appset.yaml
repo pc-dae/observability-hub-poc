@@ -7,22 +7,20 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-    - merge:
-        mergeKeys:
-          - name
-        generators:
-          - list:
-              elements:
-                - name: vault
-                  namespace: vault
-                  chart: vault
-                  repo: https://helm.releases.hashicorp.com
-                  version: 0.29.1
-          - git:
-              repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
-              revision: main
-              files:
-                - path: "local-cluster/config/cluster-params.yaml"
+  - matrix:
+      generators:
+        - list:
+            elements:
+              - name: vault
+                namespace: vault
+                chart: vault
+                repo: https://helm.releases.hashicorp.com
+                version: 0.29.1
+        - git:
+            repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+            revision: main
+            files:
+              - path: "local-cluster/config/cluster-params.yaml"
   template:
     metadata:
       name: '{{.name}}'
