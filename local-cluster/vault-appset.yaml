@@ -61,13 +61,14 @@ spec:
                 ingressClassName: nginx
                 annotations:
                   cert-manager.io/issuer: local-ca-issuer
+                  cert-manager.io/duration: 2160h
+                  cert-manager.io/renew-before: 360h
                 tls:
                   - secretName: vault-tls
                     hosts:
                       - vault.{{.dnsSuffix}}
-              certificate:
-                duration: 2160h # 90d
-                renewBefore: 360h # 15d
+                hosts:
+                  - host: vault.{{.dnsSuffix}}
               extraVolumes:
               - type: configMap
                 name: local-ca
