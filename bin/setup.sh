@@ -210,8 +210,10 @@ done
 
 sleep 5
 # Initialize vault
-vault-init.sh $debug_str --tls-skip
-vault-unseal.sh $debug_str --tls-skip
+if ! kubectl get pod/vault-0 -n vault > /dev/null 2>&1; then
+  vault-init.sh $debug_str --tls-skip
+  vault-unseal.sh $debug_str --tls-skip
+fi
 
 export VAULT_TOKEN="$(jq -r '.root_token' resources/.vault-init.json)"
   kubectl apply -f - <<EOF
