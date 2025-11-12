@@ -196,24 +196,9 @@ while ( true ); do
   sleep 5
 done
 
-# Wait for vault to start
-while ( true ); do
-  echo "Waiting for vault to start"
-  set +e
-  started="$(kubectl get pod/vault-0 -n vault -o json 2>/dev/null | jq -r '.status.containerStatuses[0].started')"
-  set -e
-  if [ "$started" == "true" ]; then
-    break
-  fi
-  sleep 5
-done
-
-sleep 5
 # Initialize vault
-if ! kubectl get pod/vault-0 -n vault > /dev/null 2>&1; then
-  vault-init.sh $debug_str --tls-skip
-  vault-unseal.sh $debug_str --tls-skip
-fi
+vault-init.sh $debug_str --tls-skip
+vault-unseal.sh $debug_str --tls-skip
 
 export VAULT_TOKEN="$(jq -r '.root_token' resources/.vault-init.json)"
   kubectl apply -f - <<EOF
