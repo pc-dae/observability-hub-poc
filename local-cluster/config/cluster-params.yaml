@@ -1,3 +1,2 @@
 dnsSuffix: kubernetes.docker.internal
-clusterIP: 10.104.118.98
 storageClass: standard
