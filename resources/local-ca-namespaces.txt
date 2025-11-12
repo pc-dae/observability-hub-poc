@@ -1,2 +1,5 @@
 vault
 ingress-nginx
+monitoring
+kafka
+argocd
