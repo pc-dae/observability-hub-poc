@@ -120,7 +120,7 @@ done
 
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
-storageClass: standard
+storageClass: hostpath
 EOF
 git add local-cluster/config/cluster-params.yaml
 if [[ `git status --porcelain` ]]; then
@@ -161,7 +161,7 @@ export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-ingress-nginx-contr
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
 clusterIP: "${CLUSTER_IP}"
-storageClass: standard
+storageClass: hostpath
 EOF
 git add local-cluster/config/cluster-params.yaml
 if [[ `git status --porcelain` ]]; then
