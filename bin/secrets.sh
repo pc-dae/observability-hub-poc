@@ -46,7 +46,6 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 source $SCRIPT_DIR/envs.sh
 
 source ${secrets_file}
-source $(local_or_global resources/github-config.sh)
 
 vault kv put ${tls_skip} -mount=secrets github-repo-read-credentials username=token password=${GITHUB_TOKEN_READ}
 
