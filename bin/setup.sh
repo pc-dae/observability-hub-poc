@@ -160,7 +160,7 @@ export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-ingress-nginx-contr
 # Now that we have the cluster IP, update the params file and push to git again
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
-clusterIP: ${CLUSTER_IP}
+clusterIP: "${CLUSTER_IP}"
 storageClass: standard
 EOF
 git add local-cluster/config/cluster-params.yaml
