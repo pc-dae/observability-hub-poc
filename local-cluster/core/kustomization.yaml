@@ -7,4 +7,4 @@ resources:
 - reloader/application.yaml
 - nginx/namespace.yaml
 - vault/namespace.yaml
-- ../cert-config/cert-config.yaml
+- cert-config.yaml
