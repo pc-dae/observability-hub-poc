@@ -3,3 +3,4 @@ ingress-nginx
 monitoring
 kafka
 argocd
+grafana
