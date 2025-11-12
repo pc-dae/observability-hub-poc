@@ -231,5 +231,4 @@ secrets.sh $debug_str --tls-skip --secrets $PWD/resources/secrets/github-secrets
 kubectl rollout restart deployment -n external-secrets external-secrets
 
 kubectl apply -f local-cluster/addons.yaml
-kubectl apply -f local-cluster/apps.yaml
 kubectl apply -f local-cluster/apps-appset.yaml
