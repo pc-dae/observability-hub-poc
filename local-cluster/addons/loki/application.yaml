@@ -13,16 +13,7 @@ spec:
       values: |
         loki:
           auth_enabled: false
-        gateway:
-          affinity: {}
-        read:
-          replicas: 1
-          affinity: {}
-        write:
-          replicas: 1
-          affinity: {}
-        backend:
-          affinity: {}
+          deploymentMode: "SingleBinary"
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
