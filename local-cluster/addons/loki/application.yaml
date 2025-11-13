@@ -16,8 +16,10 @@ spec:
         gateway:
           affinity: {}
         read:
+          replicas: 1
           affinity: {}
         write:
+          replicas: 1
           affinity: {}
         backend:
           affinity: {}
