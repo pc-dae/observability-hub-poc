@@ -13,7 +13,8 @@ spec:
       values: |
         loki:
           auth_enabled: false
-        affinity: {}
+        affinity:
+          podAntiAffinity: {}
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
