@@ -101,6 +101,12 @@ echo "Waiting for the core-services application to become healthy..."
 kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/core-services -n argocd --timeout=5m
 echo "Application 'core-services' is healthy."
 
+# Wait for the external-secrets application to be healthy
+sleep 5
+echo "Waiting for the external-secrets application to become healthy..."
+kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/external-secrets -n argocd --timeout=5m
+echo "Application 'external-secrets' is healthy."
+
 # Install CA Certificate secret so Cert Manager can issue certificates using our CA
 
 kubectl apply -f ${config_dir}/local-cluster/core/cert-manager/namespace.yaml
