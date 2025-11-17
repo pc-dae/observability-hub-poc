@@ -54,6 +54,8 @@ export LOCAL_DNS="$local_dns"
 
 echo "Waiting for cluster to be ready"
 kubectl wait --for=condition=Available  -n kube-system deployment coredns
+# The minus sign (-) at the end removes the taint
+kubectl taint nodes <your-control-plane-node-name> node-role.kubernetes.io/control-plane:NoSchedule-
 
 git config pull.rebase true
 
