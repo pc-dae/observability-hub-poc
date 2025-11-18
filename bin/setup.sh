@@ -95,22 +95,6 @@ fi
 
 application.sh --file local-cluster/core/cert-manager/application.yaml
 
-# Apply the cert-manager application and wait for it to be healthy
-kubectl apply -f local-cluster/cert-manager-app.yaml
-echo "Waiting for the cert-manager application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/cert-manager -n argocd --timeout=5m
-echo "Application 'cert-manager' is healthy."
-
-# Apply the core services application
-kubectl apply -f local-cluster/core-services-app.yaml
-
-# Wait for the external-secrets namespace to be created
-echo "Waiting for the external-secrets namespace to be created..."
-while ! kubectl get namespace external-secrets > /dev/null 2>&1; do
-    sleep 2
-done
-echo "Namespace 'external-secrets' is ready."
-
 # Install CA Certificate secret so Cert Manager can issue certificates using our CA
 
 kubectl apply -f - <<EOF
@@ -135,7 +119,7 @@ for nameSpace in $(cat $namespace_list); do
   kubectl apply -f /tmp/ca.yaml
 done
 
-kubectl apply -f local-cluster/core/cert-config.yaml
+kubectl apply -f local-cluster/cert-manager/cert-config.yaml
 
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
