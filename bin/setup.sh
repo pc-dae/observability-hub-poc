@@ -93,7 +93,7 @@ else
   fi
 fi
 
-application.sh --file local-cluster/cert-manager/application.yaml
+application.sh --file local-cluster/core/cert-manager/application.yaml
 
 # Wait for the external-secrets namespace to be created
 echo "Waiting for the external-secrets namespace to be created..."
@@ -104,7 +104,6 @@ echo "Namespace 'external-secrets' is ready."
 
 # Install CA Certificate secret so Cert Manager can issue certificates using our CA
 
-kubectl apply -f ${config_dir}/local-cluster/core/cert-manager/namespace.yaml
 kubectl apply -f - <<EOF
 apiVersion: v1
 kind: Secret
@@ -127,7 +126,7 @@ for nameSpace in $(cat $namespace_list); do
   kubectl apply -f /tmp/ca.yaml
 done
 
-kubectl apply -f local-cluster/corecert-config.yaml
+kubectl apply -f local-cluster/core/cert-config.yaml
 
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
