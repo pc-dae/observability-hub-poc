@@ -30,28 +30,6 @@ spec:
           - name: otel-persistent-queue
             mountPath: /var/lib/otelcol/file_storage
         config:
-          extensions:
-            # Define the file storage extension
-            file_storage:
-              directory: /var/lib/otelcol/file_storage
-              timeout: 1s
-
-          service:
-            extensions: [health_check, file_storage] 
-            pipelines:
-              traces:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [otlphttp/tempo]
-              metrics:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [otlphttp/mimir]
-              logs:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [otlphttp/loki]
-
           receivers:
             otlp:
               protocols:
@@ -82,6 +60,27 @@ spec:
                 enabled: true
                 storage: file_storage
                 queue_size: 10000
+          extensions:
+            # Define the file storage extension
+            file_storage:
+              directory: /var/lib/otelcol/file_storage
+              timeout: 1s
+
+          service:
+            extensions: [health_check, file_storage] 
+            pipelines:
+              traces:
+                receivers: [otlp]
+                processors: [memory_limiter, batch]
+                exporters: [otlphttp/tempo]
+              metrics:
+                receivers: [otlp]
+                processors: [memory_limiter, batch]
+                exporters: [otlphttp/mimir]
+              logs:
+                receivers: [otlp]
+                processors: [memory_limiter, batch]
+                exporters: [otlphttp/loki]
 
   destination:
     server: 'https://kubernetes.default.svc'
