@@ -93,13 +93,7 @@ else
   fi
 fi
 
-kubectl apply -f local-cluster/core-services.yaml
-
-# Wait for the core-services application to be healthy
-sleep 5
-echo "Waiting for the core-services application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/core-services -n argocd --timeout=5m
-echo "Application 'core-services' is healthy."
+application.sh --file local-cluster/cert-manager/application.yaml
 
 # Wait for the external-secrets namespace to be created
 echo "Waiting for the external-secrets namespace to be created..."
@@ -132,6 +126,8 @@ for nameSpace in $(cat $namespace_list); do
   kubectl create configmap local-ca -n ${nameSpace} --from-file=resources/CA.cer --dry-run=client -o yaml >/tmp/ca.yaml
   kubectl apply -f /tmp/ca.yaml
 done
+
+kubectl apply -f local-cluster/corecert-config.yaml
 
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
