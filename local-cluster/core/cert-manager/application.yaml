@@ -27,3 +27,13 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
+  hooks:
+  - post-sync:
+    - command: ["/bin/sh", "-c"]
+      args:
+      - |
+        set -e
+        set -x
+        
+        # Wait for the ClusterIssuer CRD to be established
+        kubectl wait --for condition=established --timeout=60s crd/clusterissuers.cert-manager.io
