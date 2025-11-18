@@ -70,6 +70,14 @@ spec:
           replicas: 0
         bloomGateway:
           replicas: 0
+
+        memcachedChunks:
+          enabled: false
+          replicas: 0
+
+        memcachedResults:
+          enabled: false
+          replicas: 0
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
