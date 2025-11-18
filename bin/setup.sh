@@ -119,7 +119,7 @@ for nameSpace in $(cat $namespace_list); do
   kubectl apply -f /tmp/ca.yaml
 done
 
-kubectl apply -f local-cluster/cert-manager/cert-config.yaml
+kubectl apply -f local-cluster/core/cert-manager/cert-config.yaml
 
 cat <<EOF > local-cluster/config/cluster-params.yaml
 dnsSuffix: ${local_dns}
