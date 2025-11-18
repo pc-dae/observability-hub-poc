@@ -137,6 +137,8 @@ echo "Refreshing Argo CD repository cache..."
 kubectl rollout restart deployment argocd-repo-server -n argocd
 kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
 
+application.sh --file local-cluster/core-services-app.yaml
+
 # Apply the ingress appset
 kubectl apply -f local-cluster/ingress-appset.yaml
 
