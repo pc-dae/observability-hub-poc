@@ -77,7 +77,8 @@ spec:
                 storage: file_storage
                 queue_size: 10000
             otlphttp/tempo:
-              endpoint: "http://tempo.monitoring.svc.cluster.local/otlp"sending_queue:
+              endpoint: "http://tempo.monitoring.svc.cluster.local/otlp"
+              sending_queue:
                 enabled: true
                 storage: file_storage
                 queue_size: 10000
