@@ -6,9 +6,9 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: 'registry-1.docker.io/bitnamicharts'
+    repoURL: 'https://charts.bitnami.com/bitnami'
     chart: kafka
-    targetRevision: 31.2.0
+    targetRevision: 32.4.3
     helm:
       values: |
         provisioning:
