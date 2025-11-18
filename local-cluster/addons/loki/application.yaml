@@ -12,6 +12,11 @@ spec:
     helm:
       values: |
         loki:
+          storage:
+            bucketNames:
+              chunks: "fake-bucket"
+              ruler: "fake-bucket"
+              admin: "fake-bucket"
           commonConfig:
             replication_factor: 1
           schemaConfig:
