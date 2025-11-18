@@ -8,11 +8,50 @@ spec:
   source:
     repoURL: 'https://open-telemetry.github.io/opentelemetry-helm-charts'
     chart: opentelemetry-collector
-    targetRevision: 0.50.0
+    targetRevision: 0.139.1
     helm:
       values: |
-        mode: "deployment"
+        image:
+          repository: "otel/opentelemetry-collector-contrib"
+          tag: "0.139.1" 
+          pullPolicy: IfNotPresent
+
+        mode: statefulset
+        volumeClaimTemplates:
+          - metadata:
+              name: otel-persistent-queue
+            spec:
+              accessModes: [ "ReadWriteOnce" ]
+              resources:
+                requests:
+                  storage: 1Gi
+              storageClassName: standard
+        extraVolumeMounts:
+          - name: otel-persistent-queue
+            mountPath: /var/lib/otelcol/file_storage
         config:
+          extensions:
+            # Define the file storage extension
+            file_storage:
+              directory: /var/lib/otelcol/file_storage
+              timeout: 1s
+
+          service:
+            extensions: [health_check, file_storage] 
+            pipelines:
+              traces:
+                receivers: [otlp]
+                processors: [memory_limiter, batch]
+                exporters: [otlphttp/tempo]
+              metrics:
+                receivers: [otlp]
+                processors: [memory_limiter, batch]
+                exporters: [otlphttp/mimir]
+              logs:
+                receivers: [otlp]
+                processors: [memory_limiter, batch]
+                exporters: [otlphttp/loki]
+
           receivers:
             otlp:
               protocols:
@@ -27,24 +66,22 @@ spec:
           exporters:
             otlphttp/mimir:
               endpoint: "http://mimir.monitoring.svc.cluster.local/otlp"
+              sending_queue:
+                enabled: true
+                storage: file_storage
+                queue_size: 10000
             otlphttp/loki:
               endpoint: "http://loki.monitoring.svc.cluster.local/otlp"
+              sending_queue:
+                enabled: true
+                storage: file_storage
+                queue_size: 10000
             otlphttp/tempo:
-              endpoint: "http://tempo.monitoring.svc.cluster.local/otlp"
-          service:
-            pipelines:
-              traces:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [otlphttp/tempo]
-              metrics:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [otlphttp/mimir]
-              logs:
-                receivers: [otlp]
-                processors: [memory_limiter, batch]
-                exporters: [otlphttp/loki]
+              endpoint: "http://tempo.monitoring.svc.cluster.local/otlp"sending_queue:
+                enabled: true
+                storage: file_storage
+                queue_size: 10000
+
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: otel-collector
