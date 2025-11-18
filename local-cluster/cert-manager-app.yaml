@@ -1,13 +1,13 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: core-services
+  name: cert-manager-app
   namespace: argocd
 spec:
   project: default
   source:
     repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
-    path: local-cluster/core
+    path: local-cluster/core/cert-manager
     targetRevision: main
   destination:
     server: 'https://kubernetes.default.svc'
