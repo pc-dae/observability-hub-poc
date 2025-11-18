@@ -29,7 +29,7 @@ spec:
         extraVolumeMounts:
           - name: otel-persistent-queue
             mountPath: /var/lib/otelcol/file_storage
-        config:
+        config: |
           receivers:
             otlp:
               protocols:
@@ -39,6 +39,17 @@ spec:
                   endpoint: 0.0.0.0:4318
           processors:
             batch:
+            memory_limiter:
+              check_interval: 1s
+              limit_percentage: 75
+              spike_limit_percentage: 15
+          exporters:
+            otlphttp/mimir:
+              endpoint: "http://mimir.monitoring.svc.cluster.local/otlp"
+              sending_queue:
+                enabled: true
+                storage: file_storage
+                queue_size: 10000
             otlphttp/loki:
               endpoint: "http://loki.monitoring.svc.cluster.local/otlp"
               sending_queue:
