@@ -17,26 +17,30 @@ spec:
             memberlist:
               join_members:
                 - '{{ printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace }}'
-            alertmanager:
-              data_dir: /data/alertmanager
-            ruler:
-              alertmanager_url: http://localhost:8080/alertmanager
+        alertmanager:
+          enabled: true
+          config:
+            data_dir: /data/alertmanager
+        ruler:
+          enabled: true
+          config:
+            alertmanager_url: http://localhost:8080/alertmanager
         query_scheduler:
           enabled: true
           config:
             max_outstanding_per_tenant: 2048
         query_frontend:
+          enabled: true
           extraArgs:
             - "-query-frontend.scheduler-address=mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095"
         querier:
           replicas: 2
-        alertmanager:
-          enabled: true
         rollout_operator:
           enabled: false
         nginx:
           enabled: true
         compactor:
+          enabled: true
           command:
             - /bin/sh
             - -c
