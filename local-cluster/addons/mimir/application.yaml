@@ -25,12 +25,6 @@ spec:
           enabled: true
           config:
             alertmanager_url: http://localhost:8080/alertmanager
-        query_scheduler:
-          enabled: true
-          config:
-            max_outstanding_per_tenant: 2048
-        query_frontend:
-          scheduler_address: 'mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095'
         querier:
           replicas: 2
         rollout_operator:
