@@ -41,17 +41,6 @@ spec:
           enabled: true
         compactor:
           enabled: true
-          command:
-            - /bin/sh
-            - -c
-            - |
-              set -ex
-              until nslookup mimir-gossip-ring.monitoring.svc.cluster.local; do
-                echo "Waiting for memberlist DNS to be available..."
-                sleep 3
-              done
-              echo "Starting mimir compactor with args: $@"
-              /bin/mimir "$@"
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
