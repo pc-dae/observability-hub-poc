@@ -116,3 +116,16 @@ spec:
     syncOptions:
     - CreateNamespace=true
     - Replace=true
+  syncWindows:
+  - kind: Service
+    schedule: "0 0 * * *" # dummy schedule
+    syncWave: 0
+  - kind: StatefulSet
+    schedule: "0 0 * * *"
+    syncWave: 1
+  - kind: Deployment
+    schedule: "0 0 * * *"
+    syncWave: 1
+  - kind: DaemonSet
+    schedule: "0 0 * * *"
+    syncWave: 1
