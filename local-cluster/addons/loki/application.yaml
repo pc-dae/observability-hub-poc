@@ -14,14 +14,8 @@ spec:
     helm:
       values: |
         loki:
-          config: |
-            log:
-              level: warn
-            chunk_store_config:
-              chunk_cache_config:
-                fifocache:
-                  max_size_items: 1024
-                  validity: 1h
+          server:
+            log_level: "warn"
           storage:
             type: filesystem
             bucketNames:
