@@ -4,3 +4,4 @@ resources/.vault-init.json
 resources/secrets/*-secrets.sh
 resources/*.pem
 resources/*.key
+.cursor/**
