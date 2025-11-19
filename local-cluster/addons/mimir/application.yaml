@@ -17,28 +17,6 @@ spec:
             memberlist:
               join_members:
                 - '{{ printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace }}'
-        alertmanager:
-          enabled: true
-          config:
-            data_dir: /data/alertmanager
-        ruler:
-          enabled: true
-          config:
-            alertmanager_url: http://localhost:8080/alertmanager
-        query_scheduler:
-          enabled: true
-          config:
-            max_outstanding_per_tenant: 2048
-        query_frontend:
-          scheduler_address: 'mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095'
-        rollout_operator:
-          enabled: false
-        nginx:
-          enabled: true
-        compactor:
-          command:
-            - /bin/sh
-            - -c
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
