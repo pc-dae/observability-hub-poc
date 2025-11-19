@@ -33,6 +33,9 @@ spec:
           enabled: true
           config:
             max_outstanding_per_tenant: 2048
+        query_frontend:
+          enabled: true
+          scheduler_address: 'mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095'
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
