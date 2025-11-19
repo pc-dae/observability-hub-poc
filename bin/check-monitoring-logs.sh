@@ -35,7 +35,7 @@ for pod in $PODS; do
         echo "--- Container: $container ---"
         
         # We use || true so that the script doesn't exit if grep finds no matches (which returns exit code 1)
-        output=$(kubectl logs --tail=1000 -n "$NAMESPACE" "$pod" -c "$container" 2>/dev/null | grep -iE "error|warn" | tail -100|| true)
+        output=$(kubectl logs --tail=1000 -n "$NAMESPACE" "$pod" -c "$container" 2>/dev/null | grep -iE "error|warn" | tail -10|| true)
 
         if [ -n "$output" ]; then
             echo "$output"
