@@ -30,9 +30,7 @@ spec:
           config:
             max_outstanding_per_tenant: 2048
         query_frontend:
-          enabled: true
-          extraArgs:
-            - "-query-frontend.scheduler-address=mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095"
+          scheduler_address: 'mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095'
         querier:
           replicas: 2
         rollout_operator:
@@ -40,7 +38,9 @@ spec:
         nginx:
           enabled: true
         compactor:
-          enabled: true
+          command:
+            - /bin/sh
+            - -c
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
