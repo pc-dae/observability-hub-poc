@@ -71,7 +71,7 @@ spec:
         bloomGateway:
           replicas: 0
 
-        memcachedChunks:
+        chunksCache:
           enabled: true
           replicas: 1
           resources:
