@@ -25,12 +25,6 @@ for pod in $PODS; do
     
     ALL_CONTAINERS=$(echo "$CONTAINERS $INIT_CONTAINERS" | xargs)
 
-    if [ -z "$ALL_CONTAINERS" ];
-    then
-        echo "  No containers found for pod '$pod'."
-        continue
-    fi
-
     for container in $ALL_CONTAINERS; do
         echo "--- Container: $container ---"
         
