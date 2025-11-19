@@ -13,6 +13,7 @@ spec:
       values: |
         loki:
           storage:
+            type: filesystem
             bucketNames:
               chunks: "fake-bucket"
               ruler: "fake-bucket"
