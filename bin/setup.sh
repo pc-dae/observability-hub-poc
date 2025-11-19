@@ -220,6 +220,7 @@ vault-secrets-config.sh $debug_str --tls-skip
 
 secrets.sh $debug_str --tls-skip --secrets $PWD/resources/secrets/github-secrets.sh
 
+sleep 10
 kubectl rollout restart deployment -n external-secrets external-secrets
 
 kubectl apply -f local-cluster/addons.yaml
