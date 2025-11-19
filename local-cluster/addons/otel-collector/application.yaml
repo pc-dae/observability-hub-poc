@@ -29,7 +29,11 @@ spec:
         extraVolumeMounts:
           - name: otel-persistent-queue
             mountPath: /var/lib/otelcol/file_storage
-        config: |
+        presets:
+          # enables the k8sattributes processor and adds it to all pipelines
+          kubernetesAttributes:
+            enabled: true
+        config: |-
           receivers:
             otlp:
               protocols:
