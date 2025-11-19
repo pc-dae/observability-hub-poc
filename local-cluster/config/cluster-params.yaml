@@ -1,3 +1,2 @@
 dnsSuffix: kubernetes.docker.internal
-clusterIP: "10.96.148.42"
 storageClass: hostpath
