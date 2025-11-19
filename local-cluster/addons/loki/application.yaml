@@ -35,6 +35,14 @@ spec:
             volume_enabled: true
           ruler:
             enable_api: true
+            storage:
+              type: 'local'
+              local:
+                directory: /rules
+            rule_path: /tmp/rules
+            ring:
+              kvstore:
+                store: inmemory
               
         deploymentMode: SingleBinary
 
