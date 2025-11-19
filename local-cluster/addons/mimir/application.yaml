@@ -4,11 +4,12 @@ metadata:
   name: mimir
   namespace: argocd
 spec:
+  destination:
+    namespace: monitoring
+    server: https://kubernetes.default.svc
   project: default
   source:
-    repoURL: 'https://grafana.github.io/helm-charts'
     chart: mimir-distributed
-    targetRevision: 5.1.0
     helm:
       values: |
         mimir:
@@ -38,9 +39,8 @@ spec:
                 sleep 3
               done
               /bin/mimir "$@"
-  destination:
-    server: 'https://kubernetes.default.svc'
-    namespace: monitoring
+    repoURL: https://grafana.github.io/helm-charts
+    targetRevision: 5.1.0
   syncPolicy:
     automated:
       prune: true
