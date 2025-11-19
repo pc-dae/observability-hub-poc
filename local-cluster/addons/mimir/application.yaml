@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://grafana.github.io/helm-charts'
     chart: mimir-distributed
-    targetRevision: 4.1.0
+    targetRevision: 5.1.0
     helm:
       values: |
         mimir:
@@ -35,4 +35,4 @@ spec:
       selfHeal: true
     syncOptions:
     - CreateNamespace=true
-    - Replace=true
+    - ServerSideApply=true
