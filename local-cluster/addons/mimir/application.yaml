@@ -37,7 +37,7 @@ spec:
                 echo "Waiting for memberlist DNS to be available..."
                 sleep 3
               done
-              /bin/mimir --target=compactor $(EXTRA_ARGS)
+              /bin/mimir "$@"
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
