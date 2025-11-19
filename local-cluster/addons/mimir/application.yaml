@@ -17,6 +17,10 @@ spec:
             memberlist:
               join_members:
                 - '{{ printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace }}'
+            alertmanager:
+              data_dir: /data/alertmanager
+        alertmanager:
+          enabled: true
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
