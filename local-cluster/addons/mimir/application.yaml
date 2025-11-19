@@ -25,6 +25,10 @@ spec:
           enabled: true
           config:
             alertmanager_url: http://localhost:8080/alertmanager
+        query_scheduler:
+          enabled: true
+          config:
+            max_outstanding_per_tenant: 2048
         querier:
           replicas: 2
         rollout_operator:
