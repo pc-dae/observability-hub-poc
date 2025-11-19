@@ -21,10 +21,10 @@ spec:
               data_dir: /data/alertmanager
             ruler:
               alertmanager_url: http://localhost:8080/alertmanager
-            query_scheduler:
-              max_outstanding_per_tenant: 2048
         query_scheduler:
           enabled: true
+          config:
+            max_outstanding_per_tenant: 2048
         query_frontend:
           extraArgs:
             - "-query-frontend.scheduler-address=mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095"
