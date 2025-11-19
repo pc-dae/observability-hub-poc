@@ -47,3 +47,5 @@ for pod in $PODS; do
 done
 
 echo "✅ Log check complete."
+
+kubectl get pod -n monitoring -o wide
