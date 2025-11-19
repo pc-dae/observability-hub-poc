@@ -17,15 +17,16 @@ spec:
           pullPolicy: IfNotPresent
 
         mode: statefulset
-        volumeClaimTemplates:
-          - metadata:
-              name: otel-persistent-queue
-            spec:
-              accessModes: [ "ReadWriteOnce" ]
-              resources:
-                requests:
-                  storage: 1Gi
-              storageClassName: standard
+        statefulset:
+          volumeClaimTemplates:
+            - metadata:
+                name: otel-persistent-queue
+              spec:
+                accessModes: [ "ReadWriteOnce" ]
+                resources:
+                  requests:
+                    storage: 1Gi
+                storageClassName: standard
         extraVolumeMounts:
           - name: otel-persistent-queue
             mountPath: /var/lib/otelcol/file_storage
