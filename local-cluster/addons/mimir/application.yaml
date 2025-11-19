@@ -21,6 +21,10 @@ spec:
               data_dir: /data/alertmanager
             ruler:
               alertmanager_url: http://localhost:8080/alertmanager
+            query_scheduler:
+              max_outstanding_per_tenant: 2048
+        querier:
+          replicas: 2
         alertmanager:
           enabled: true
         rollout_operator:
