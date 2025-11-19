@@ -19,8 +19,32 @@ spec:
                 - '{{ printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace }}'
             alertmanager:
               data_dir: /data/alertmanager
+            ruler:
+              alertmanager_url: http://localhost:8080/alertmanager
+            query_scheduler:
+              max_outstanding_per_tenant: 2048
+            frontend_worker:
+              scheduler_address: 'mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095'
+        querier:
+          replicas: 2
         alertmanager:
           enabled: true
+        rollout_operator:
+          enabled: false
+        nginx:
+          enabled: true
+        compactor:
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -ex
+              until nslookup mimir-gossip-ring.monitoring.svc.cluster.local; do
+                echo "Waiting for memberlist DNS to be available..."
+                sleep 3
+              done
+              echo "Starting mimir compactor with args: $@"
+              /bin/mimir "$@"
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
