@@ -25,6 +25,10 @@ spec:
           enabled: true
           config:
             alertmanager_url: http://localhost:8080/alertmanager
+        nginx:
+          enabled: true
+        compactor:
+          enabled: true
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
