@@ -12,12 +12,6 @@ spec:
     helm:
       values: |
         loki:
-          memcachedChunks:
-            enabled: false
-            replicas: 0
-          memcachedResults:
-            enabled: false
-            replicas: 0
           storage:
             bucketNames:
               chunks: "fake-bucket"
@@ -76,6 +70,33 @@ spec:
           replicas: 0
         bloomGateway:
           replicas: 0
+
+        memcachedChunks:
+          replicas: 1
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 128Mi
+        
+        memcachedFrontend:
+          replicas: 1
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 128Mi
+
+        memcachedIndexWrites:
+          replicas: 1
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 128Mi
+
+        memcachedIndexReads:
+          enabled: false
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
