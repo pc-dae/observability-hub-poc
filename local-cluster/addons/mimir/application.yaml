@@ -26,6 +26,18 @@ spec:
           enabled: false
         nginx:
           enabled: true
+        compactor:
+          extraArgs:
+            - "--config.file=/etc/mimir/mimir.yaml"
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until nslookup $(MIMIR_MEMBERLIST_JOIN_MEMBERS); do
+                echo "Waiting for memberlist DNS to be available..."
+                sleep 3
+              done
+              /bin/mimir --target=compactor $(EXTRA_ARGS)
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring

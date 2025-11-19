@@ -58,6 +58,15 @@ spec:
 
         singleBinary:
           replicas: 1
+          command:
+            - /bin/sh
+            - -ec
+            - |
+              until nslookup {{ .Release.Name }}-memberlist.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}; do
+                echo "Waiting for memberlist DNS to be available..."
+                sleep 3
+              done
+              /usr/bin/loki -config.file=/etc/loki/config/config.yaml -target=all
           persistence:
             enabled: true
             size: 10Gi
