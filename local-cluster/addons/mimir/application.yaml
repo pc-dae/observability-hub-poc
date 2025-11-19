@@ -38,8 +38,6 @@ spec:
           scheduler_address: 'mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095'
         querier:
           replicas: 2
-        rollout_operator:
-          enabled: true
     repoURL: https://grafana.github.io/helm-charts
     targetRevision: 5.1.0
   syncPolicy:
