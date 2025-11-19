@@ -70,6 +70,24 @@ spec:
           replicas: 0
         bloomGateway:
           replicas: 0
+
+        memcachedChunks:
+          enabled: true
+          replicas: 1
+          resources:
+            requests:
+              memory: 128Mi
+            limits:
+              memory: 128Mi
+
+        memcachedFrontend:
+          enabled: false
+
+        memcachedIndexWrites:
+          enabled: false
+
+        memcachedIndexReads:
+          enabled: false
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
