@@ -12,6 +12,14 @@ spec:
     helm:
       values: |
         loki:
+          config:
+            log:
+              level: warn
+            chunk_store_config:
+              chunk_cache_config:
+                fifocache:
+                  max_size_items: 1024
+                  validity: 1h
           storage:
             type: filesystem
             bucketNames:
@@ -44,6 +52,8 @@ spec:
             ring:
               kvstore:
                 store: inmemory
+          querier:
+            max_concurrent: 1024
               
         deploymentMode: SingleBinary
 

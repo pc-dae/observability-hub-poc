@@ -13,6 +13,8 @@ spec:
       values: |
         tempo:
           searchEnabled: true
+        server:
+          grpc_server_min_time_between_pings_ms: 10000
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: monitoring
