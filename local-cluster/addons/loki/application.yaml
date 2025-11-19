@@ -12,11 +12,6 @@ spec:
     helm:
       values: |
         loki:
-          storage:
-            bucketNames:
-              chunks: "fake-bucket"
-              ruler: "fake-bucket"
-              admin: "fake-bucket"
           commonConfig:
             replication_factor: 1
           schemaConfig:
@@ -43,6 +38,9 @@ spec:
 
         singleBinary:
           replicas: 1
+          persistence:
+            enabled: true
+            size: 10Gi
 
         # Zero out replica counts of other deployment modes
         backend:
