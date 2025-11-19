@@ -11,6 +11,10 @@ spec:
     targetRevision: 32.4.3
     helm:
       values: |
+        image:
+          registry: docker.io
+          repository: bitnamilegacy/kafka
+          tag: 3.7.0-debian-12-r0
         provisioning:
           enabled: true
           automountServiceAccountToken: true
