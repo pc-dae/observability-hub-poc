@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: 'https://charts.bitnami.com/bitnami'
     chart: kafka
-    targetRevision: 32.4.3
+    targetRevision: 20.0.0
     helm:
       values: |
         global:
@@ -20,8 +20,6 @@ spec:
           image:
             repository: bitnamilegacy/kafka
             tag: 3.7.0-debian-12-r0
-        zookeeper:
-          enabled: true
         provisioning:
           enabled: true
           automountServiceAccountToken: true
