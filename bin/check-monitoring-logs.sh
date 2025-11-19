@@ -39,8 +39,6 @@ for pod in $PODS; do
 
         if [ -n "$output" ]; then
             echo "$output"
-        else
-            echo "  No 'error' or 'warn' lines found in recent logs."
         fi
         echo "" # for spacing
     done
