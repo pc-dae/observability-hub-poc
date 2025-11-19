@@ -14,7 +14,7 @@ spec:
     helm:
       values: |
         loki:
-          config:
+          config: |
             log:
               level: warn
             chunk_store_config:
