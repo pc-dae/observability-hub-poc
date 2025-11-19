@@ -31,8 +31,6 @@ spec:
             max_outstanding_per_tenant: 2048
         query_frontend:
           scheduler_address: 'mimir-query-scheduler-headless.monitoring.svc.cluster.local:9095'
-        querier:
-          replicas: 2
         rollout_operator:
           enabled: false
         nginx:
