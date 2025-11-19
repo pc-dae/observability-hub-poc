@@ -13,7 +13,7 @@ spec:
       values: |
         image:
           repository: "otel/opentelemetry-collector-contrib"
-          tag: "0.139.1" 
+          tag: "0.139.0"
           pullPolicy: IfNotPresent
 
         mode: statefulset
