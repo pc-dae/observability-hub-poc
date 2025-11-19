@@ -62,7 +62,7 @@ spec:
             - /bin/sh
             - -ec
             - |
-              until nslookup {{ .Release.Name }}-memberlist.{{ .Release.Namespace }}.svc.{{ .Values.global.clusterDomain }}; do
+              until nslookup loki-memberlist.monitoring.svc.cluster.local; do
                 echo "Waiting for memberlist DNS to be available..."
                 sleep 3
               done
