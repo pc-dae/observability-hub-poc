@@ -1,8 +1,7 @@
-.idea
-.vscode
-*.swp
-*.swo
+**/*.key
 .DS_Store
-resources/CA.key
 resources/.vault-init.json
-local-cluster/addons/grafana/grafana-datasources.yaml
+resources/secrets/*-secrets.sh
+resources/*.pem
+resources/*.key
+.cursor/**
