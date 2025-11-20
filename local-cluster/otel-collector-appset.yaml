@@ -64,6 +64,9 @@ spec:
               kubernetesAttributes:
                 enabled: true
             config:
+              receivers:
+                kubeletstats:
+                  insecure_skip_verify: true
               processors:
                 batch: {}
                 memory_limiter:
@@ -77,6 +80,8 @@ spec:
                     ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/loki:
                   endpoint: "https://loki.{{.dnsSuffix}}/otlp"
+                  headers:
+                    X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/tempo:
