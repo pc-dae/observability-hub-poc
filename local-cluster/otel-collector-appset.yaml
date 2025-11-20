@@ -93,7 +93,6 @@ spec:
         syncOptions:
         - CreateNamespace=true
         - Replace=true
-  ignoreMissingValueFiles: true
   template:
     metadata:
       annotations:
