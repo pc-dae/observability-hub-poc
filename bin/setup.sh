@@ -121,17 +121,6 @@ done
 
 kubectl apply -f local-cluster/core/cert-manager/cert-config.yaml
 
-cat <<EOF > local-cluster/config/cluster-params.yaml
-dnsSuffix: ${local_dns}
-storageClass: hostpath
-EOF
-git add local-cluster/config/cluster-params.yaml
-if [[ `git status --porcelain` ]]; then
-  git commit -m "update cluster params with dns suffix"
-  git pull
-  git push
-fi
-
 # Force a refresh of the Argo CD repo server to pick up the latest git changes
 echo "Refreshing Argo CD repository cache..."
 kubectl rollout restart deployment argocd-repo-server -n argocd
