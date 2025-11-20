@@ -27,32 +27,22 @@ spec:
       namespace: argocd
     spec:
       project: default
-      source:
-        repoURL: '{{.repo}}'
-        chart: '{{.chart}}'
-        targetRevision: '{{.version}}'
-        helm:
-          values: |
-            tempo:
-              searchEnabled: true
-            server:
-              grpc_server_min_time_between_pings_ms: 10000
-            gateway:
-              enabled: true
-              ingress:
-                enabled: true
-                ingressClassName: nginx
-                annotations:
-                  cert-manager.io/cluster-issuer: local-ca-issuer
-                hosts:
-                  - host: tempo.{{.dnsSuffix}}
-                    paths:
-                      - path: /
-                        pathType: Prefix
-                tls:
-                  - secretName: tempo-tls
-                    hosts:
-                      - tempo.{{.dnsSuffix}}
+      sources:
+        - repoURL: '{{.repo}}'
+          chart: '{{.chart}}'
+          targetRevision: '{{.version}}'
+          helm:
+            values: |
+              tempo:
+                searchEnabled: true
+              server:
+                grpc_server_min_time_between_pings_ms: 10000
+        - repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+          path: local-cluster/charts/tempo-ingress
+          targetRevision: main
+          helm:
+            values: |
+              dnsSuffix: '{{.dnsSuffix}}'
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
@@ -63,4 +53,3 @@ spec:
         syncOptions:
         - CreateNamespace=true
         - Replace=true
-

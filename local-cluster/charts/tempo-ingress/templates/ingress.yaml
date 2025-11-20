@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tempo
+  namespace: monitoring
+  annotations:
+    cert-manager.io/cluster-issuer: local-ca-issuer
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: tempo.{{ .Values.dnsSuffix }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tempo
+                port:
+                  number: 3200
+  tls:
+    - secretName: tempo-tls
+      hosts:
+        - tempo.{{ .Values.dnsSuffix }}
+

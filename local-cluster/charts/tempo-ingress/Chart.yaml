@@ -1,0 +1,4 @@
+apiVersion: v2
+name: tempo-ingress
+version: 0.1.0
+
