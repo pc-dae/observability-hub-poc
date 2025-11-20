@@ -51,7 +51,7 @@ spec:
                   name: local-ca
             extraVolumeMounts:
               - name: local-ca
-                mountPath: /etc/ssl/certs/ca.crt
+                mountPath: /var/lib/grafana/certs/ca.crt
                 subPath: CA.cer
             hostAliases:
             - ip: '{{.clusterIP}}'
@@ -80,7 +80,7 @@ spec:
                     tlsSkipVerify: false
                     tlsAuthWithCACert: true
                   secureJsonData:
-                    tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
+                    tlsCaCert: "@file:/var/lib/grafana/certs/ca.crt"
                 - name: Loki
                   type: loki
                   uid: loki
@@ -90,7 +90,7 @@ spec:
                     tlsSkipVerify: false
                     tlsAuthWithCACert: true
                   secureJsonData:
-                    tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
+                    tlsCaCert: "@file:/var/lib/grafana/certs/ca.crt"
                 - name: Tempo
                   type: tempo
                   uid: tempo
@@ -100,7 +100,7 @@ spec:
                     tlsSkipVerify: false
                     tlsAuthWithCACert: true
                   secureJsonData:
-                    tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
+                    tlsCaCert: "@file:/var/lib/grafana/certs/ca.crt"
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
