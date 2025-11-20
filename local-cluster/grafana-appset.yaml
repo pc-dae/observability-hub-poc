@@ -101,13 +101,7 @@ spec:
                   editable: true
                   options:
                     path: /var/lib/grafana/dashboards/default
-            dashboards:
-              default:
-                kafka-overview:
-                  gnetId: 15687
-                  revision: 11
-                  datasource: Mimir
-                  folder: "default"
+            dashboards: {}
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
