@@ -58,10 +58,13 @@ spec:
                 enable_gzip: true
               auth:
                 oauth_allow_insecure_email_lookup: true
-            secretDatasources:
+            extraSecretMounts:
               - name: grafana-datasources
-                label: grafana_datasource
                 secretName: grafana-datasources
+                defaultMode: 0440
+                mountPath: /etc/grafana/provisioning/datasources/datasources.yaml
+                subPath: datasources.yaml
+                readOnly: true
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
