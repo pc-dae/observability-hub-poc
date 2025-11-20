@@ -32,7 +32,7 @@ spec:
         chart: '{{.chart}}'
         targetRevision: '{{.version}}'
         helm:
-          values: |
+          valuesObject:
             extraVolumes:
               - name: local-ca
                 configMap:
@@ -54,33 +54,21 @@ spec:
                 enable_gzip: true
               auth:
                 oauth_allow_insecure_email_lookup: true
-            adminPassword: "admin"
-            ingress:
-              enabled: true
-              ingressClassName: nginx
-              annotations:
-                cert-manager.io/cluster-issuer: local-ca-issuer
-              hosts:
-                - grafana.{{.dnsSuffix}}
-              tls:
-                - secretName: grafana-tls
-                  hosts:
-                    - grafana.{{.dnsSuffix}}
             datasources:
               datasources.yaml:
                 apiVersion: 1
                 datasources:
-                  - name: Mimir
-                    type: prometheus
-                    uid: PAE45454D0EDB9216
-                    url: "https://mimir.{{.dnsSuffix}}/prometheus"
-                    access: proxy
-                    jsonData:
-                      tlsSkipVerify: false
-                      tlsAuthWithCACert: true
-                    secureJsonData:
-                      tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
+                - name: Mimir
+                  type: prometheus
+                  uid: PAE45454D0EDB9216
+                  url: "https://mimir.{{.dnsSuffix}}/prometheus"
+                  access: proxy
                   isDefault: true
+                  jsonData:
+                    tlsSkipVerify: false
+                    tlsAuthWithCACert: true
+                  secureJsonData:
+                    tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
                 - name: Loki
                   type: loki
                   uid: loki
@@ -104,6 +92,21 @@ spec:
             dashboardProviders:
               dashboardproviders.yaml:
                 apiVersion: 1
+                providers:
+                - name: 'default'
+                  orgId: 1
+                  folder: ''
+                  type: file
+                  disableDeletion: false
+                  editable: true
+                  options:
+                    path: /var/lib/grafana/dashboards/default
+            dashboards:
+              default:
+                kafka-overview:
+                  gnetId: 15687
+                  revision: 11
+                  datasource: Mimir
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
