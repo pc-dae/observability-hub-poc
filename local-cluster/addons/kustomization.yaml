@@ -3,3 +3,4 @@ kind: Kustomization
 resources:
   - kafka/application.yaml
   - grafana
+  - dashboards
