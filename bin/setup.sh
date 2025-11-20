@@ -217,3 +217,4 @@ kubectl apply -f local-cluster/grafana-appset.yaml
 kubectl apply -f local-cluster/mimir-appset.yaml
 kubectl apply -f local-cluster/loki-appset.yaml
 kubectl apply -f local-cluster/tempo-appset.yaml
+kubectl apply -f local-cluster/otel-collector-appset.yaml

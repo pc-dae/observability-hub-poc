@@ -18,6 +18,13 @@ spec:
                 name: tempo
                 port:
                   number: 3200
+          - path: /v1/traces
+            pathType: Prefix
+            backend:
+              service:
+                name: tempo
+                port:
+                  number: 4318
   tls:
     - secretName: tempo-tls
       hosts:

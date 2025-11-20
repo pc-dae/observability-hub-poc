@@ -1,0 +1,87 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: otel-collector
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - matrix:
+      generators:
+        - list:
+            elements:
+              - name: otel-collector
+                namespace: otel-collector
+                chart: opentelemetry-collector
+                repo: https://open-telemetry.github.io/opentelemetry-helm-charts
+                version: 0.139.1
+        - git:
+            repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+            revision: main
+            files:
+              - path: "local-cluster/config/cluster-params.yaml"
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: '{{.repo}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.version}}'
+        helm:
+          values: |
+            image:
+              repository: "otel/opentelemetry-collector-contrib"
+              tag: "0.139.0"
+            mode: daemonset
+            presets:
+              logsCollection:
+                enabled: true
+              hostMetrics:
+                enabled: true
+              kubeletMetrics:
+                enabled: true
+              kubernetesAttributes:
+                enabled: true
+            config:
+              processors:
+                batch: {}
+                memory_limiter:
+                  check_interval: 1s
+                  limit_percentage: 75
+                  spike_limit_percentage: 15
+              exporters:
+                otlphttp/mimir:
+                  endpoint: "https://mimir.{{.dnsSuffix}}/otlp"
+                otlphttp/loki:
+                  endpoint: "https://loki.{{.dnsSuffix}}/otlp"
+                otlphttp/tempo:
+                  endpoint: "https://tempo.{{.dnsSuffix}}"
+              service:
+                pipelines:
+                  traces:
+                    receivers: [otlp]
+                    processors: [memory_limiter, batch]
+                    exporters: [otlphttp/tempo]
+                  metrics:
+                    receivers: [otlp, hostmetrics, kubeletstats]
+                    processors: [memory_limiter, batch]
+                    exporters: [otlphttp/mimir]
+                  logs:
+                    receivers: [otlp, filelog]
+                    processors: [memory_limiter, batch]
+                    exporters: [otlphttp/loki]
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - Replace=true
+
