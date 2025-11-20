@@ -40,11 +40,11 @@ spec:
             mode: daemonset
             service:
               enabled: true
-            volumes:
+            extraVolumes:
             - name: local-ca
               configMap:
                 name: local-ca
-            volumeMounts:
+            extraVolumeMounts:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
               subPath: ca.crt
