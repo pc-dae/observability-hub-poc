@@ -47,7 +47,7 @@ spec:
             extraVolumeMounts:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
-              subPath: ca.crt
+              subPath: CA.cer
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
