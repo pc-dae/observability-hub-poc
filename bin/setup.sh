@@ -214,3 +214,6 @@ kubectl rollout restart deployment -n external-secrets external-secrets
 
 kubectl apply -f local-cluster/addons.yaml
 kubectl apply -f local-cluster/grafana-appset.yaml
+kubectl apply -f local-cluster/mimir-appset.yaml
+kubectl apply -f local-cluster/loki-appset.yaml
+kubectl apply -f local-cluster/tempo-appset.yaml
