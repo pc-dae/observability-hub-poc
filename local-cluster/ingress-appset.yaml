@@ -25,6 +25,9 @@ spec:
     metadata:
       name: '{{.name}}'
       namespace: argocd
+    annotations:
+      argocd.argoproj.io/sync-options: ServerSideApply=true
+      argocd.argoproj.io/refresh: "hard"
     spec:
       project: default
       source:
