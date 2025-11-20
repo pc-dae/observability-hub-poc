@@ -33,6 +33,16 @@ spec:
         targetRevision: '{{.version}}'
         helm:
           values: |
+            hostAliases:
+            - ip: '{{.clusterIP}}'
+              hostnames:
+              - mimir.{{.dnsSuffix}}
+              - loki.{{.dnsSuffix}}
+              - tempo.{{.dnsSuffix}}
+              - grafana.{{.dnsSuffix}}
+            grafana.ini:
+              server:
+                root_url: "https://grafana.{{.dnsSuffix}}"
             adminPassword: "admin"
             ingress:
               enabled: true
