@@ -18,9 +18,11 @@ stringData:
       jsonData:
         tlsSkipVerify: false
         tlsAuthWithCACert: true
+        httpHeaderName1: "X-Scope-OrgID"
       secureJsonData:
         tlsCACert: |
 ${CA_CERT}
+        httpHeaderValue1: "fake"
     - name: Loki
       type: loki
       uid: loki
@@ -29,9 +31,11 @@ ${CA_CERT}
       jsonData:
         tlsSkipVerify: false
         tlsAuthWithCACert: true
+        httpHeaderName1: "X-Scope-OrgID"
       secureJsonData:
         tlsCACert: |
 ${CA_CERT}
+        httpHeaderValue1: "fake"
     - name: Tempo
       type: tempo
       uid: tempo
@@ -40,6 +44,8 @@ ${CA_CERT}
       jsonData:
         tlsSkipVerify: false
         tlsAuthWithCACert: true
+        httpHeaderName1: "X-Scope-OrgID"
       secureJsonData:
         tlsCACert: |
 ${CA_CERT}
+        httpHeaderValue1: "fake"
