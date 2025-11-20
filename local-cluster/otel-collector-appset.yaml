@@ -37,6 +37,8 @@ spec:
               repository: "otel/opentelemetry-collector-contrib"
               tag: "0.139.0"
             mode: daemonset
+            service:
+              enabled: true
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
