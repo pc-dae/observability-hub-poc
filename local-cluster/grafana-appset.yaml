@@ -33,14 +33,14 @@ spec:
         targetRevision: '{{.version}}'
         helm:
           values: |
-            volumes:
+            extraVolumes:
             - name: local-ca
               configMap:
                 name: local-ca
-            volumeMounts:
+            extraVolumeMounts:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
-              subPath: ca.crt
+              subPath: CA.cer
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
