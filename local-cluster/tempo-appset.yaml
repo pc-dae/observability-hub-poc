@@ -1,0 +1,65 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: tempo
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - matrix:
+      generators:
+        - list:
+            elements:
+              - name: tempo
+                namespace: monitoring
+                chart: tempo
+                repo: https://grafana.github.io/helm-charts
+                version: 1.24.0
+        - git:
+            repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+            revision: main
+            files:
+              - path: "local-cluster/config/cluster-params.yaml"
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: '{{.repo}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.version}}'
+        helm:
+          values: |
+            tempo:
+              searchEnabled: true
+            server:
+              grpc_server_min_time_between_pings_ms: 10000
+            gateway:
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: local-ca-issuer
+                hosts:
+                  - host: tempo.{{.dnsSuffix}}
+                    paths:
+                      - path: /
+                        pathType: Prefix
+                tls:
+                  - secretName: tempo-tls
+                    hosts:
+                      - tempo.{{.dnsSuffix}}
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - Replace=true
+

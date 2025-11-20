@@ -1,0 +1,154 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: loki
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - matrix:
+      generators:
+        - list:
+            elements:
+              - name: loki
+                namespace: monitoring
+                chart: loki
+                repo: https://grafana.github.io/helm-charts
+                version: 6.46.0
+        - git:
+            repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+            revision: main
+            files:
+              - path: "local-cluster/config/cluster-params.yaml"
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: '{{.repo}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.version}}'
+        helm:
+          values: |
+            loki:
+              server:
+                log_level: "warn"
+              storage:
+                type: filesystem
+                bucketNames:
+                  chunks: "fake-bucket"
+                  ruler: "fake-bucket"
+                  admin: "fake-bucket"
+              commonConfig:
+                replication_factor: 1
+              schemaConfig:
+                configs:
+                  - from: "2024-04-01"
+                    store: tsdb
+                    object_store: filesystem
+                    schema: v13
+                    index:
+                      prefix: loki_index_
+                      period: 24h
+              pattern_ingester:
+                  enabled: true
+              limits_config:
+                allow_structured_metadata: true
+                volume_enabled: true
+              ruler:
+                enable_api: true
+                storage:
+                  type: 'local'
+                  local:
+                    directory: /rules
+                rule_path: /tmp/rules
+                ring:
+                  kvstore:
+                    store: inmemory
+              querier:
+                max_concurrent: 1024
+            deploymentMode: SingleBinary
+            minio:
+              enabled: false
+            singleBinary:
+              replicas: 1
+              command:
+                - /bin/sh
+                - -ec
+                - |
+                  until nslookup loki-memberlist.monitoring.svc.cluster.local; do
+                    echo "Waiting for memberlist DNS to be available..."
+                    sleep 3
+                  done
+                  /usr/bin/loki -config.file=/etc/loki/config/config.yaml -target=all
+              persistence:
+                enabled: true
+                size: 10Gi
+            backend:
+              replicas: 0
+            read:
+              replicas: 0
+            write:
+              replicas: 0
+            ingester:
+              replicas: 0
+            querier:
+              replicas: 0
+            queryFrontend:
+              replicas: 0
+            queryScheduler:
+              replicas: 0
+            distributor:
+              replicas: 0
+            compactor:
+              replicas: 0
+            indexGateway:
+              replicas: 0
+            bloomCompactor:
+              replicas: 0
+            bloomGateway:
+              replicas: 0
+            chunksCache:
+              enabled: true
+              replicas: 1
+              resources:
+                requests:
+                  memory: 128Mi
+                limits:
+                  memory: 128Mi
+            memcachedFrontend:
+              enabled: false
+            memcachedIndexWrites:
+              enabled: false
+            memcachedIndexReads:
+              enabled: false
+            gateway:
+              enabled: true
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: local-ca-issuer
+                hosts:
+                  - host: loki.{{.dnsSuffix}}
+                    paths:
+                      - path: /
+                        pathType: Prefix
+                tls:
+                  - secretName: loki-tls
+                    hosts:
+                      - loki.{{.dnsSuffix}}
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - Replace=true
+

@@ -51,16 +51,16 @@ spec:
                 datasources:
                   - name: Mimir
                     type: prometheus
-                    url: http://mimir.monitoring.svc.cluster.local/prometheus
+                    url: https://mimir.{{.dnsSuffix}}/prometheus
                     access: proxy
                     isDefault: true
                   - name: Loki
                     type: loki
-                    url: http://loki.monitoring.svc.cluster.local/loki
+                    url: https://loki.{{.dnsSuffix}}
                     access: proxy
                   - name: Tempo
                     type: tempo
-                    url: http://tempo.monitoring.svc.cluster.local
+                    url: https://tempo.{{.dnsSuffix}}
                     access: proxy
       destination:
         server: 'https://kubernetes.default.svc'

@@ -1,0 +1,92 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: mimir
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - matrix:
+      generators:
+        - list:
+            elements:
+              - name: mimir
+                namespace: monitoring
+                chart: mimir-distributed
+                repo: https://grafana.github.io/helm-charts
+                version: 5.1.0
+        - git:
+            repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+            revision: main
+            files:
+              - path: "local-cluster/config/cluster-params.yaml"
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: '{{.repo}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.version}}'
+        helm:
+          values: |
+            mimir:
+              structuredConfig:
+                memberlist:
+                  join_members:
+                    - '{{ printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace }}'
+            alertmanager:
+              enabled: true
+              config:
+                data_dir: /data/alertmanager
+            ruler:
+              enabled: true
+              config:
+                alertmanager_url: http://localhost:8080/alertmanager
+            nginx:
+              enabled: true
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: local-ca-issuer
+                hosts:
+                  - host: mimir.{{.dnsSuffix}}
+                    paths:
+                      - path: /
+                        pathType: Prefix
+                tls:
+                  - secretName: mimir-tls
+                    hosts:
+                      - mimir.{{.dnsSuffix}}
+            compactor:
+              enabled: true
+            query_scheduler:
+              enabled: true
+              config:
+                max_outstanding_per_tenant: 2048
+            query_frontend:
+              enabled: true
+              scheduler_address: 'mimir-query-scheduler.monitoring.svc.cluster.local:9095'
+            querier:
+              replicas: 2
+              config:
+                frontend_worker:
+                  scheduler_address: 'mimir-query-scheduler.monitoring.svc.cluster.local:9095'
+            minio:
+              initJob:
+                enabled: false
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - ServerSideApply=true
+
