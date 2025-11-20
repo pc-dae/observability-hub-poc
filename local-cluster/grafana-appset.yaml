@@ -58,6 +58,12 @@ spec:
                 enable_gzip: true
               auth:
                 oauth_allow_insecure_email_lookup: true
+            sidecar:
+              dashboards:
+                enabled: true
+                label: grafana_dashboard
+                labelValue: "1"
+                searchNamespace: ALL
             extraSecretMounts:
               - name: grafana-datasources
                 secretName: grafana-datasources
