@@ -54,3 +54,4 @@ spec:
         syncOptions:
         - CreateNamespace=true
         - Replace=true
+        - Hook=Delete
