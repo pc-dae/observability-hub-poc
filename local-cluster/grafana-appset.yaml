@@ -33,6 +33,17 @@ spec:
         targetRevision: '{{.version}}'
         helm:
           valuesObject:
+            ingress:
+              enabled: true
+              ingressClassName: "nginx"
+              annotations:
+                cert-manager.io/cluster-issuer: "local-ca-issuer"
+              hosts:
+                - "grafana.{{.dnsSuffix}}"
+              tls:
+                - secretName: "grafana-tls"
+                  hosts:
+                    - "grafana.{{.dnsSuffix}}"
             extraVolumes:
               - name: local-ca
                 configMap:
