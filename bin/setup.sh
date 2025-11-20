@@ -212,7 +212,11 @@ secrets.sh $debug_str --tls-skip --secrets $PWD/resources/secrets/github-secrets
 sleep 10
 kubectl rollout restart deployment -n external-secrets external-secrets
 
-kubectl apply -f local-cluster/addons.yaml
+export CA_CERT=$(kubectl get configmap local-ca -n ingress-nginx -o jsonpath='{.data.CA\.cer}' | sed 's/^/          /')
+envsubst < resources/grafana-datasources.yaml > local-cluster/addons/grafana/grafana-datasources.yaml
+
+application.sh --file local-cluster/addons.yaml
+
 kubectl apply -f local-cluster/grafana-appset.yaml
 kubectl apply -f local-cluster/mimir-appset.yaml
 kubectl apply -f local-cluster/loki-appset.yaml

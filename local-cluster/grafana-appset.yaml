@@ -45,14 +45,6 @@ spec:
                 - secretName: "grafana-tls"
                   hosts:
                     - "grafana.{{.dnsSuffix}}"
-            extraVolumes:
-              - name: local-ca
-                configMap:
-                  name: local-ca
-            extraVolumeMounts:
-              - name: local-ca
-                mountPath: /var/lib/grafana/certs/ca.crt
-                subPath: CA.cer
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
@@ -66,41 +58,10 @@ spec:
                 enable_gzip: true
               auth:
                 oauth_allow_insecure_email_lookup: true
-            datasources:
-              datasources.yaml:
-                apiVersion: 1
-                datasources:
-                - name: Mimir
-                  type: prometheus
-                  uid: PAE45454D0EDB9216
-                  url: "https://mimir.{{.dnsSuffix}}/prometheus"
-                  access: proxy
-                  isDefault: true
-                  jsonData:
-                    tlsSkipVerify: false
-                    tlsAuthWithCACert: true
-                  secureJsonData:
-                    tlsCaCert: "@file:/var/lib/grafana/certs/ca.crt"
-                - name: Loki
-                  type: loki
-                  uid: loki
-                  url: "https://loki.{{.dnsSuffix}}"
-                  access: proxy
-                  jsonData:
-                    tlsSkipVerify: false
-                    tlsAuthWithCACert: true
-                  secureJsonData:
-                    tlsCaCert: "@file:/var/lib/grafana/certs/ca.crt"
-                - name: Tempo
-                  type: tempo
-                  uid: tempo
-                  url: "https://tempo.{{.dnsSuffix}}"
-                  access: proxy
-                  jsonData:
-                    tlsSkipVerify: false
-                    tlsAuthWithCACert: true
-                  secureJsonData:
-                    tlsCaCert: "@file:/var/lib/grafana/certs/ca.crt"
+            secretDatasources:
+              - name: grafana-datasources
+                label: grafana_datasource
+                secretName: grafana-datasources
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'

@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: grafana-datasources
+  namespace: grafana
+  labels:
+    grafana_datasource: "1"
+stringData:
+  datasources.yaml: |
+    apiVersion: 1
+    datasources:
+    - name: Mimir
+      type: prometheus
+      uid: PAE45454D0EDB9216
+      url: https://mimir.${LOCAL_DNS}/prometheus
+      access: proxy
+      isDefault: true
+      jsonData:
+        tlsSkipVerify: false
+        tlsAuthWithCACert: true
+      secureJsonData:
+        tlsCACert: |
+${CA_CERT}
+    - name: Loki
+      type: loki
+      uid: loki
+      url: https://loki.${LOCAL_DNS}
+      access: proxy
+      jsonData:
+        tlsSkipVerify: false
+        tlsAuthWithCACert: true
+      secureJsonData:
+        tlsCACert: |
+${CA_CERT}
+    - name: Tempo
+      type: tempo
+      uid: tempo
+      url: https://tempo.${LOCAL_DNS}
+      access: proxy
+      jsonData:
+        tlsSkipVerify: false
+        tlsAuthWithCACert: true
+      secureJsonData:
+        tlsCACert: |
+${CA_CERT}
