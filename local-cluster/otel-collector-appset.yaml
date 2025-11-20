@@ -37,6 +37,12 @@ spec:
               repository: "otel/opentelemetry-collector-contrib"
               tag: "0.139.0"
             mode: daemonset
+            hostAliases:
+            - ip: '{{.clusterIP}}'
+              hostnames:
+              - mimir.{{.dnsSuffix}}
+              - loki.{{.dnsSuffix}}
+              - tempo.{{.dnsSuffix}}
             presets:
               logsCollection:
                 enabled: true
@@ -84,4 +90,3 @@ spec:
         syncOptions:
         - CreateNamespace=true
         - Replace=true
-
