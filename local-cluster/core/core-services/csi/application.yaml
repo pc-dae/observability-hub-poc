@@ -9,6 +9,11 @@ spec:
     repoURL: 'https://kubernetes-sigs.github.io/secrets-store-csi-driver/charts'
     chart: secrets-store-csi-driver
     targetRevision: 1.5.3
+    helm:
+      values: |
+        hooks:
+          crd-upgrade:
+            enabled: false
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kube-system
