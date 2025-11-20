@@ -73,10 +73,16 @@ spec:
               exporters:
                 otlphttp/mimir:
                   endpoint: "https://mimir.{{.dnsSuffix}}/otlp"
+                  tls:
+                    ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/loki:
                   endpoint: "https://loki.{{.dnsSuffix}}/otlp"
+                  tls:
+                    ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/tempo:
                   endpoint: "https://tempo.{{.dnsSuffix}}"
+                  tls:
+                    ca_file: /etc/ssl/certs/ca.crt
               service:
                 pipelines:
                   traces:
