@@ -4,3 +4,4 @@ monitoring
 kafka
 argocd
 grafana
+otel-collector
