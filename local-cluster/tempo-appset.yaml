@@ -38,6 +38,7 @@ spec:
             server:
               grpc_server_min_time_between_pings_ms: 10000
             gateway:
+              enabled: true
               ingress:
                 enabled: true
                 ingressClassName: nginx
