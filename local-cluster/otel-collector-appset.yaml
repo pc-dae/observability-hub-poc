@@ -76,6 +76,8 @@ spec:
               exporters:
                 otlphttp/mimir:
                   endpoint: "https://mimir.{{.dnsSuffix}}/otlp"
+                  headers:
+                    X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/loki:
@@ -86,6 +88,8 @@ spec:
                     ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/tempo:
                   endpoint: "https://tempo.{{.dnsSuffix}}"
+                  headers:
+                    X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
               service:
@@ -112,4 +116,3 @@ spec:
         syncOptions:
         - CreateNamespace=true
         - Replace=true
-
