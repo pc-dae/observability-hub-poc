@@ -37,7 +37,7 @@ spec:
               structuredConfig:
                 memberlist:
                   join_members:
-                    - '{{ printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace }}'
+                    - '{{ "{{" }} printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace {{ "}}" }}'
             alertmanager:
               enabled: true
               config:
