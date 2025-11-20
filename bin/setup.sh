@@ -215,7 +215,7 @@ kubectl rollout restart deployment -n external-secrets external-secrets
 export CA_CERT=$(kubectl get configmap local-ca -n ingress-nginx -o jsonpath='{.data.CA\.cer}' | sed 's/^/          /')
 envsubst < resources/grafana-datasources.yaml > local-cluster/addons/grafana/grafana-datasources.yaml
 
-git add ocal-cluster/addons/grafana/grafana-datasources.yaml
+git add local-cluster/addons/grafana/grafana-datasources.yaml
 if [[ `git status --porcelain` ]]; then
   git commit -m "grafana datasources"
   git pull
