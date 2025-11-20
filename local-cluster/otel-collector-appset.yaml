@@ -40,14 +40,14 @@ spec:
             mode: daemonset
             service:
               enabled: true
-            extraVolumes:
-            - type: configMap
-              name: local-ca
-            extraVolumeMounts:
+            volumes:
             - name: local-ca
-              mountPath: /etc/ssl/certs/local-ca.pem
-              subPath: CA.cer
-              readOnly: false
+              configMap:
+                name: local-ca
+            volumeMounts:
+            - name: local-ca
+              mountPath: /etc/ssl/certs/ca.crt
+              subPath: ca.crt
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
