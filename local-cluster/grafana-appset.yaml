@@ -33,6 +33,7 @@ spec:
         targetRevision: '{{.version}}'
         helm:
           valuesObject:
+            adminPassword: "admin"
             ingress:
               enabled: true
               ingressClassName: "nginx"
@@ -100,19 +101,6 @@ spec:
                     tlsAuthWithCACert: true
                   secureJsonData:
                     tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
-            dashboardProviders:
-              dashboardproviders.yaml:
-                apiVersion: 1
-                providers:
-                - name: 'default'
-                  orgId: 1
-                  folder: ''
-                  type: file
-                  disableDeletion: false
-                  editable: true
-                  options:
-                    path: /var/lib/grafana/dashboards/default
-            dashboards: {}
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
