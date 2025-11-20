@@ -93,16 +93,4 @@ spec:
         syncOptions:
         - CreateNamespace=true
         - Replace=true
-  template:
-    metadata:
-      annotations:
-        argocd.argoproj.io/sync-wave: "-1"
-    spec:
-      project: '{{ .Values.spec.project }}'
-      source:
-        repoURL: '{{ .Values.spec.source.repoURL }}'
-        targetRevision: '{{ .Values.spec.source.targetRevision }}'
-        chart: '{{ .Values.spec.source.chart }}'
-      destination:
-        server: '{{ .Values.spec.destination.server }}'
-        namespace: '{{ .Values.spec.destination.namespace }}'
+
