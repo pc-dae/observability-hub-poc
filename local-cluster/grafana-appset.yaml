@@ -33,6 +33,14 @@ spec:
         targetRevision: '{{.version}}'
         helm:
           values: |
+            volumes:
+            - name: local-ca
+              configMap:
+                name: local-ca
+            volumeMounts:
+            - name: local-ca
+              mountPath: /etc/ssl/certs/ca.crt
+              subPath: ca.crt
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
@@ -43,6 +51,9 @@ spec:
             grafana.ini:
               server:
                 root_url: "https://grafana.{{.dnsSuffix}}"
+                enable_gzip: true
+              auth:
+                oauth_allow_insecure_email_lookup: true
             adminPassword: "admin"
             ingress:
               enabled: true
@@ -61,17 +72,38 @@ spec:
                 datasources:
                   - name: Mimir
                     type: prometheus
-                    url: https://mimir.{{.dnsSuffix}}/prometheus
+                    uid: PAE45454D0EDB9216
+                    url: "https://mimir.{{.dnsSuffix}}/prometheus"
                     access: proxy
+                    jsonData:
+                      tlsSkipVerify: false
+                      tlsAuthWithCACert: true
+                    secureJsonData:
+                      tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
                     isDefault: true
                   - name: Loki
                     type: loki
-                    url: https://loki.{{.dnsSuffix}}
+                    uid: loki
+                    url: "https://loki.{{.dnsSuffix}}"
                     access: proxy
+                    jsonData:
+                      tlsSkipVerify: false
+                      tlsAuthWithCACert: true
+                    secureJsonData:
+                      tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
                   - name: Tempo
                     type: tempo
-                    url: https://tempo.{{.dnsSuffix}}
+                    uid: tempo
+                    url: "https://tempo.{{.dnsSuffix}}"
                     access: proxy
+                    jsonData:
+                      tlsSkipVerify: false
+                      tlsAuthWithCACert: true
+                    secureJsonData:
+                      tlsCaCert: "@file:/etc/ssl/certs/ca.crt"
+            dashboardProviders:
+              dashboardproviders.yaml:
+                apiVersion: 1
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
