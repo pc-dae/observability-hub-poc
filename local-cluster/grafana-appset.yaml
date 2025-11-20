@@ -107,6 +107,7 @@ spec:
                   gnetId: 15687
                   revision: 11
                   datasource: Mimir
+                  folder: "default"
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'
