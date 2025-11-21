@@ -52,6 +52,70 @@ b64w=""
 
 export LOCAL_DNS="$local_dns"
 
+function setup_argocd_password() {
+  echo "Setting up Argo CD password..."
+  ARGOCD_SERVER="argocd.${LOCAL_DNS}"
+
+  if [ -f "resources/.argocd-admin-password" ]; then
+    echo "Using existing generated Argo CD admin password."
+    ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
+  else
+    echo "Generating new Argo CD admin password and patching argocd-secret."
+    ARGOCD_PASSWORD=$(openssl rand -base64 16)
+    echo -n "$ARGOCD_PASSWORD" > resources/.argocd-admin-password
+    
+    # Wait for the argocd-secret to be created by the controller
+    until kubectl get secret argocd-secret -n argocd > /dev/null 2>&1; do
+      echo "Waiting for argocd-secret to be created..."
+      sleep 2
+    done
+    
+    echo "Waiting for Argo CD port-forward to be ready for password hashing..."
+    # Add a loop to wait for the port-forward to be stable
+    for i in {1..5}; do
+      kubectl -n argocd port-forward svc/argocd-server 8080:443 &> /dev/null &
+      sleep 2
+      if curl -k https://localhost:8080/api/v1/session &> /dev/null; then
+        echo "Argo CD server is ready."
+        break
+      fi
+      if [ $i -eq 5 ]; then
+        echo "Argo CD server did not become ready in time."
+        exit 1
+      fi
+    done
+
+    BCRYPT_HASH=$(argocd account bcrypt --password "$ARGOCD_PASSWORD")
+    
+    # Stop the port-forward process
+    kill %1
+    
+    kubectl -n argocd patch secret argocd-secret -p '{"data": {"admin.password": "'$(echo -n $BCRYPT_HASH | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
+    echo "Patched argocd-secret with new password hash."
+  fi
+
+  # Check if the Argo CD Ingress exists
+  if ! kubectl get ingress argocd-server-ingress -n argocd &> /dev/null; then
+    echo "Argo CD Ingress not found. Using port-forward for initial login."
+    nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
+    
+    echo "Waiting for Argo CD port-forward to be ready..."
+    while ! nc -z localhost 8080; do
+      sleep 1
+    done
+    echo "Argo CD port-forward is ready."
+    sleep 5
+    
+    argocd login localhost:8080 --username admin --password "$ARGOCD_PASSWORD" --insecure --skip-test-tls
+  else
+    echo "Argo CD Ingress already exists. Logging in via Ingress."
+    if ! argocd login "$ARGOCD_SERVER" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
+      echo "Failed to log in to Argo CD. Please check the Ingress and Argo CD server status."
+      exit 1
+    fi
+  fi
+}
+
 echo "Waiting for cluster to be ready"
 kubectl wait --for=condition=Available  -n kube-system deployment coredns
 # The minus sign (-) at the end removes the taint
@@ -67,67 +131,9 @@ sleep 5
 kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-server
 sleep 2
 
-if [ -f "resources/.argocd-admin-password" ]; then
-  echo "Using existing generated Argo CD admin password."
-  PASSWORD=$(cat resources/.argocd-admin-password)
-else
-  echo "Generating new Argo CD admin password and patching argocd-secret."
-  # This command requires the argocd CLI to be installed
-  PASSWORD=$(openssl rand -base64 16)
-  echo -n "$PASSWORD" > resources/.argocd-admin-password
-  
-  # Wait for the argocd-secret to be created by the controller
-  until kubectl get secret argocd-secret -n argocd > /dev/null 2>&1; do
-    echo "Waiting for argocd-secret to be created..."
-    sleep 2
-  done
-  
-  # The argocd cli needs to be logged in to run account bcrypt
-  INITIAL_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-  echo "Waiting for Argo CD port-forward to be ready for password hashing..."
-  # Add a loop to wait for the port-forward to be stable
-  for i in {1..5}; do
-    kubectl -n argocd port-forward svc/argocd-server 8080:443 &> /dev/null &
-    sleep 2
-    if curl -k https://localhost:8080/api/v1/session &> /dev/null; then
-      echo "Argo CD server is ready."
-      break
-    fi
-    if [ $i -eq 5 ]; then
-      echo "Argo CD server did not become ready in time."
-      exit 1
-    fi
-  done
+setup_argocd_password
 
-  BCRYPT_HASH=$(argocd account bcrypt --password "$PASSWORD")
-  
-  # Stop the port-forward process
-  kill %1
-  
-  kubectl -n argocd patch secret argocd-secret -p '{"data": {"admin.password": "'$(echo -n $BCRYPT_HASH | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
-  echo "Patched argocd-secret with new password hash."
-fi
-
-if kubectl get ingress argocd-server-ingress -n argocd > /dev/null 2>&1; then
-  echo "Argo CD Ingress already exists. Logging in via Ingress."
-  if ! argocd login "$ARGOCD_SERVER" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
-    echo "Failed to log in to Argo CD. Please check the Ingress and Argo CD server status."
-    exit 1
-  fi
-  echo "Login successful."
-else
-  echo "Argo CD Ingress not found. Using port-forward for initial login."
-  nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
-  
-  echo "Waiting for Argo CD port-forward to be ready..."
-  while ! nc -z localhost 8080; do
-    sleep 1
-  done
-  echo "Argo CD port-forward is ready."
-  sleep 5
-  
-  argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure --skip-test-tls
-fi
+# Function to apply Argo CD applications
 
 # Create a CA Certificate for the ingress controller to use
 
