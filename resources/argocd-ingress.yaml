@@ -5,7 +5,8 @@ metadata:
   namespace: argocd
   annotations:
     cert-manager.io/cluster-issuer: "local-ca-issuer"
-    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTPS"
+    nginx.ingress.kubernetes.io/ssl-passthrough: "true"
 spec:
   ingressClassName: nginx
   rules:
@@ -18,7 +19,7 @@ spec:
           service:
             name: argocd-server
             port:
-              name: http
+              name: https
   tls:
   - hosts:
     - argocd.${LOCAL_DNS}
