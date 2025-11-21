@@ -96,15 +96,15 @@ spec:
                 pipelines:
                   traces:
                     receivers: [otlp]
-                    processors: [memory_limiter, batch]
+                    processors: [memory_limiter, k8sattributes, batch]
                     exporters: [otlphttp/tempo]
                   metrics:
                     receivers: [otlp, hostmetrics, kubeletstats]
-                    processors: [memory_limiter, batch]
+                    processors: [memory_limiter, k8sattributes, batch]
                     exporters: [otlphttp/mimir]
                   logs:
                     receivers: [otlp, filelog]
-                    processors: [memory_limiter, batch]
+                    processors: [memory_limiter, k8sattributes, batch]
                     exporters: [otlphttp/loki]
       destination:
         server: 'https://kubernetes.default.svc'
