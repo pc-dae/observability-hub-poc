@@ -110,7 +110,11 @@ fi
 
 if kubectl get ingress argocd-server-ingress -n argocd > /dev/null 2>&1; then
   echo "Argo CD Ingress already exists. Logging in via Ingress."
-  argocd login argocd.${LOCAL_DNS} --username admin --password "$PASSWORD" --insecure --skip-test-tls
+  if ! argocd login "$ARGOCD_SERVER" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
+    echo "Failed to log in to Argo CD. Please check the Ingress and Argo CD server status."
+    exit 1
+  fi
+  echo "Login successful."
 else
   echo "Argo CD Ingress not found. Using port-forward for initial login."
   nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
