@@ -54,51 +54,29 @@ export LOCAL_DNS="$local_dns"
 
 function setup_argocd_password() {
   echo "Setting up Argo CD password..."
-  ARGOCD_SERVER="argocd.${LOCAL_DNS}"
-
   if [ -f "resources/.argocd-admin-password" ]; then
     echo "Using existing generated Argo CD admin password."
-    ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
   else
     echo "Generating new Argo CD admin password and patching argocd-secret."
+    # The ARGOCD_PASSWORD variable is made local to this function
+    local ARGOCD_PASSWORD
     ARGOCD_PASSWORD=$(openssl rand -base64 16)
     echo -n "$ARGOCD_PASSWORD" > resources/.argocd-admin-password
-    
+
     # Wait for the argocd-secret to be created by the controller
     until kubectl get secret argocd-secret -n argocd > /dev/null 2>&1; do
       echo "Waiting for argocd-secret to be created..."
       sleep 2
     done
-    
-    echo "Waiting for Argo CD port-forward to be ready for password hashing..."
-    for i in {1..5}; do
-      kubectl -n argocd port-forward svc/argocd-server 8080:443 &> /dev/null &
-      sleep 2
-      if curl -k https://localhost:8080/api/v1/session &> /dev/null; then
-        echo "Argo CD server is ready."
-        break
-      fi
-      if [ $i -eq 5 ]; then
-        echo "Argo CD server did not become ready in time."
-        exit 1
-      fi
-    done
 
+    # argocd account bcrypt works locally without needing to log in.
+    local BCRYPT_HASH
     BCRYPT_HASH=$(argocd account bcrypt --password "$ARGOCD_PASSWORD")
-    
-    kill %1
-    
-    kubectl -n argocd patch secret argocd-secret -p '{"data": {"admin.password": "'$(echo -n $BCRYPT_HASH | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
+
+    kubectl -n argocd patch secret argocd-secret \
+      -p '{"data": {"admin.password": "'$(echo -n "$BCRYPT_HASH" | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
     echo "Patched argocd-secret with new password hash."
   fi
-
-  # Login to Argo CD
-  echo "Logging in to Argo CD..."
-  if ! argocd login "$ARGOCD_SERVER" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
-    echo "Failed to log in to Argo CD. Please check the Ingress and Argo CD server status."
-    exit 1
-  fi
-  echo "Argo CD login successful."
 }
 
 echo "Waiting for cluster to be ready"
@@ -116,13 +94,7 @@ sleep 5
 kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-server
 sleep 2
 
-# The login process is problematic, skipping. Kubectl apply will handle the appsets.
-# echo "Configuring Argo CD server for Ingress..."
-# kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
-# kubectl rollout restart deployment argocd-server -n argocd
-# kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
-
-# Function to apply Argo CD applications
+setup_argocd_password
 
 # Create a CA Certificate for the ingress controller to use
 
@@ -188,7 +160,18 @@ echo "Waiting for the ingress-nginx application to become healthy..."
 kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
 
-# setup_argocd_password
+echo "Configuring Argo CD server for Ingress..."
+kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
+envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
+
+echo "Restarting Argo CD server to apply Ingress configuration..."
+kubectl rollout restart deployment argocd-server -n argocd
+kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
+
+echo "Logging in to Argo CD via Ingress..."
+ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
+# The --grpc-web flag is often needed when connecting through an Ingress
+argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure
 
 echo "Waiting for ingress service to be created..."
 while ! kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller > /dev/null 2>&1; do
