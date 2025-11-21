@@ -170,8 +170,19 @@ kubectl wait --for=condition=Available -n argocd deployment/argocd-server --time
 
 echo "Logging in to Argo CD via Ingress..."
 ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
-# The --grpc-web flag is often needed when connecting through an Ingress
-argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure
+# Retry login in case server is not immediately ready
+for i in {1..5}; do
+  if argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
+    echo "Argo CD login successful."
+    break
+  fi
+  if [ $i -eq 5 ]; then
+    echo "Failed to log in to Argo CD after multiple attempts."
+    exit 1
+  fi
+  echo "Login failed, retrying in 5 seconds..."
+  sleep 5
+done
 
 echo "Waiting for ingress service to be created..."
 while ! kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller > /dev/null 2>&1; do
