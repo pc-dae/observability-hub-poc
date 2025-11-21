@@ -160,9 +160,15 @@ echo "Waiting for the ingress-nginx application to become healthy..."
 kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
 
+echo "Issuing TLS certificate for Argo CD server..."
+kubectl apply -f resources/argocd-server-cert.yaml
+echo "Waiting for Argo CD server TLS secret to be created by cert-manager..."
+until kubectl get secret argocd-server-tls -n argocd > /dev/null 2>&1; do
+  sleep 2
+done
+echo "Argo CD server TLS secret is ready."
+
 echo "Configuring Argo CD server for Ingress..."
-# Directly patch the deployment to add the --insecure flag. This is the most reliable method.
-kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
 envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
 
 echo "Restarting Argo CD server to apply Ingress configuration..."
@@ -173,7 +179,8 @@ echo "Logging in to Argo CD via Ingress..."
 ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
 # Retry login in case server is not immediately ready
 for i in {1..5}; do
-  if argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
+  # Note: --insecure is removed as we now have a fully trusted TLS chain
+  if argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD"; then
     echo "Argo CD login successful."
     break
   fi
