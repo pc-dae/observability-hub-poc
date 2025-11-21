@@ -71,7 +71,6 @@ function setup_argocd_password() {
     done
     
     echo "Waiting for Argo CD port-forward to be ready for password hashing..."
-    # Add a loop to wait for the port-forward to be stable
     for i in {1..5}; do
       kubectl -n argocd port-forward svc/argocd-server 8080:443 &> /dev/null &
       sleep 2
@@ -87,33 +86,19 @@ function setup_argocd_password() {
 
     BCRYPT_HASH=$(argocd account bcrypt --password "$ARGOCD_PASSWORD")
     
-    # Stop the port-forward process
     kill %1
     
     kubectl -n argocd patch secret argocd-secret -p '{"data": {"admin.password": "'$(echo -n $BCRYPT_HASH | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
     echo "Patched argocd-secret with new password hash."
   fi
 
-  # Check if the Argo CD Ingress exists
-  if ! kubectl get ingress argocd-server-ingress -n argocd &> /dev/null; then
-    echo "Argo CD Ingress not found. Using port-forward for initial login."
-    nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
-    
-    echo "Waiting for Argo CD port-forward to be ready..."
-    while ! nc -z localhost 8080; do
-      sleep 1
-    done
-    echo "Argo CD port-forward is ready."
-    sleep 5
-    
-    argocd login localhost:8080 --username admin --password "$ARGOCD_PASSWORD" --insecure --skip-test-tls
-  else
-    echo "Argo CD Ingress already exists. Logging in via Ingress."
-    if ! argocd login "$ARGOCD_SERVER" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
-      echo "Failed to log in to Argo CD. Please check the Ingress and Argo CD server status."
-      exit 1
-    fi
+  # Login to Argo CD
+  echo "Logging in to Argo CD..."
+  if ! argocd login "$ARGOCD_SERVER" --grpc-web --username admin --password "$ARGOCD_PASSWORD" --insecure; then
+    echo "Failed to log in to Argo CD. Please check the Ingress and Argo CD server status."
+    exit 1
   fi
+  echo "Argo CD login successful."
 }
 
 echo "Waiting for cluster to be ready"
@@ -131,9 +116,10 @@ sleep 5
 kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-server
 sleep 2
 
+echo "Configuring Argo CD server for Ingress..."
 kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
-
-setup_argocd_password
+kubectl rollout restart deployment argocd-server -n argocd
+kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
 
 # Function to apply Argo CD applications
 
@@ -200,6 +186,8 @@ sleep 5
 echo "Waiting for the ingress-nginx application to become healthy..."
 kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
+
+setup_argocd_password
 
 echo "Waiting for ingress service to be created..."
 while ! kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller > /dev/null 2>&1; do
