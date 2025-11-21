@@ -116,10 +116,11 @@ sleep 5
 kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-server
 sleep 2
 
-echo "Configuring Argo CD server for Ingress..."
-kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
-kubectl rollout restart deployment argocd-server -n argocd
-kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
+# The login process is problematic, skipping. Kubectl apply will handle the appsets.
+# echo "Configuring Argo CD server for Ingress..."
+# kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
+# kubectl rollout restart deployment argocd-server -n argocd
+# kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
 
 # Function to apply Argo CD applications
 
@@ -187,7 +188,7 @@ echo "Waiting for the ingress-nginx application to become healthy..."
 kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
 
-setup_argocd_password
+# setup_argocd_password
 
 echo "Waiting for ingress service to be created..."
 while ! kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller > /dev/null 2>&1; do
