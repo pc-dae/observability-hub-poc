@@ -60,7 +60,7 @@ function setup_argocd_password() {
     echo "Generating new Argo CD admin password and patching argocd-secret."
     # The ARGOCD_PASSWORD variable is made local to this function
     local ARGOCD_PASSWORD
-    ARGOCD_PASSWORD=$(openssl rand -base64 16)
+    ARGOCD_PASSWORD=$(openssl rand -base64 10)
     echo -n "$ARGOCD_PASSWORD" > resources/.argocd-admin-password
 
     # Wait for the argocd-secret to be created by the controller
@@ -68,14 +68,14 @@ function setup_argocd_password() {
       echo "Waiting for argocd-secret to be created..."
       sleep 2
     done
-
-    # argocd account bcrypt works locally without needing to log in.
-    local BCRYPT_HASH
     BCRYPT_HASH=$(argocd account bcrypt --password "$ARGOCD_PASSWORD")
-
+    CURRENT_TIME=$(date +%Y-%m-%dT%H:%M:%SZ)
     kubectl -n argocd patch secret argocd-secret \
-      -p '{"data": {"admin.password": "'$(echo -n "$BCRYPT_HASH" | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
-    echo "Patched argocd-secret with new password hash."
+      -p "{\"stringData\": {
+        \"admin.password\": \"$BCRYPT_HASH\",
+        \"admin.passwordMtime\": \"$CURRENT_TIME\"
+      }}"
+    kubectl -n argocd rollout restart deployment argocd-server
   fi
 }
 
@@ -174,6 +174,9 @@ envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
 echo "Restarting Argo CD server to apply Ingress configuration..."
 kubectl rollout restart deployment argocd-server -n argocd
 kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
+
+echo "Giving Argo CD server a moment to initialize..."
+sleep 5
 
 echo "Logging in to Argo CD via Ingress..."
 ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
