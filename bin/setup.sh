@@ -68,16 +68,23 @@ kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-
 sleep 2
 
 PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
 
-echo "Waiting for Argo CD port-forward to be ready..."
-while ! nc -z localhost 8080; do
-  sleep 1
-done
-echo "Argo CD port-forward is ready."
-sleep 5
-
-argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure --skip-test-tls  
+if kubectl get ingress argocd-server-ingress -n argocd > /dev/null 2>&1; then
+  echo "Argo CD Ingress already exists. Logging in via Ingress."
+  argocd login argocd.${LOCAL_DNS} --username admin --password "$PASSWORD" --insecure --skip-test-tls
+else
+  echo "Argo CD Ingress not found. Using port-forward for initial login."
+  nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
+  
+  echo "Waiting for Argo CD port-forward to be ready..."
+  while ! nc -z localhost 8080; do
+    sleep 1
+  done
+  echo "Argo CD port-forward is ready."
+  sleep 5
+  
+  argocd login localhost:8080 --username admin --password "$PASSWORD" --insecure --skip-test-tls
+fi
 
 # Create a CA Certificate for the ingress controller to use
 
@@ -177,6 +184,10 @@ sleep 5
 echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
 kubectl wait --for=condition=ResourcesUpToDate=True applicationset/vault -n argocd --timeout=2m
 echo "ApplicationSet 'vault' is up to date."
+
+echo "Configuring argocd-server for Ingress"
+kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
+envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
 
 # Wait for vault to start
 while ( true ); do
