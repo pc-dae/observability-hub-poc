@@ -1,6 +1,7 @@
 **/*.key
 .DS_Store
 resources/.vault-init.json
+resources/.argocd-admin-password
 resources/secrets/*-secrets.sh
 resources/*.pem
 resources/*.key

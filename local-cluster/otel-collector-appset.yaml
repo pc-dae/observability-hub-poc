@@ -96,10 +96,10 @@ spec:
                 pipelines:
                   traces:
                     receivers: [otlp]
-                    processors: [memory_limiter, k8sattributes, batch]
+                    processors: [memory_limiter, batch]
                     exporters: [otlphttp/tempo]
                   metrics:
-                    receivers: [otlp, hostmetrics, kubeletstats]
+                    receivers: [otlp, kubeletstats, hostmetrics]
                     processors: [memory_limiter, k8sattributes, batch]
                     exporters: [otlphttp/mimir]
                   logs:
