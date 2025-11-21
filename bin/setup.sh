@@ -84,10 +84,20 @@ else
   
   # The argocd cli needs to be logged in to run account bcrypt
   INITIAL_PASSWORD=$(kubectl -n argocd get secret argocd-initial-admin-secret -o jsonpath="{.data.password}" | base64 -d)
-  nohup kubectl port-forward svc/argocd-server -n argocd 8080:443 >/dev/null 2>&1 &
   echo "Waiting for Argo CD port-forward to be ready for password hashing..."
-  while ! nc -z localhost 8080; do sleep 1; done
-  argocd login localhost:8080 --username admin --password "$INITIAL_PASSWORD" --insecure --skip-test-tls
+  # Add a loop to wait for the port-forward to be stable
+  for i in {1..5}; do
+    kubectl -n argocd port-forward svc/argocd-server 8080:443 &> /dev/null &
+    sleep 2
+    if curl -k https://localhost:8080/api/v1/session &> /dev/null; then
+      echo "Argo CD server is ready."
+      break
+    fi
+    if [ $i -eq 5 ]; then
+      echo "Argo CD server did not become ready in time."
+      exit 1
+    fi
+  done
 
   BCRYPT_HASH=$(argocd account bcrypt --password "$PASSWORD")
   
