@@ -161,7 +161,8 @@ kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingres
 echo "Application 'ingress-nginx' is healthy."
 
 echo "Configuring Argo CD server for Ingress..."
-kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"server.insecure":"true"}}'
+# Patch the deployment to add the --insecure flag, allowing TLS termination at the Ingress.
+kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
 envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
 
 echo "Restarting Argo CD server to apply Ingress configuration..."
