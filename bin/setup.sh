@@ -167,6 +167,14 @@ echo "Waiting for the ingress-nginx application to become healthy..."
 kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
 echo "Application 'ingress-nginx' is healthy."
 
+echo "Configuring Argo CD server for Ingress..."
+# Add the --insecure flag to the argocd-server deployment.
+# This tells the server that TLS is being terminated upstream by the Ingress.
+kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
+
+# Set the public URL in the argocd-cm configmap
+kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"url": "https://argocd.'${LOCAL_DNS}'"}}'
+
 echo "Issuing TLS certificate for Argo CD server..."
 # Delete the existing certificate to ensure a new one with the correct SANs is created.
 kubectl delete certificate argocd-server-tls -n argocd --ignore-not-found=true
@@ -180,7 +188,7 @@ until kubectl get secret argocd-server-tls -n argocd > /dev/null 2>&1; do
 done
 echo "Argo CD server TLS secret is ready."
 
-echo "Configuring Argo CD server for Ingress..."
+echo "Applying Ingress for Argo CD..."
 envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
 
 echo "Restarting Argo CD server to apply Ingress configuration..."
