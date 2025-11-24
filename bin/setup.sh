@@ -191,14 +191,15 @@ echo "Argo CD server TLS secret is ready."
 echo "Applying Ingress for Argo CD..."
 envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
 
-echo "Restarting Argo CD server to apply Ingress configuration..."
+echo "Restarting Argo CD server and Ingress to apply Ingress configuration..."
 kubectl rollout restart deployment argocd-server -n argocd
 kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl rollout restart deployment -n ingress-nginx ingress-ingress-nginx-controller
 kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
 kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
+kubectl wait --for=condition=Available -n ingress-nginx deployment/ingress-ingress-nginx-controller --timeout=2m
 
-
-echo "Giving Argo CD server a moment to initialize..."
+echo "Giving services a moment to initialize..."
 sleep 10
 
 echo "Logging in to Argo CD via Ingress..."
