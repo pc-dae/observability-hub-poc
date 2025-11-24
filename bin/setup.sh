@@ -174,6 +174,11 @@ application.sh --file local-cluster/core-services-app.yaml
 
 application.sh --file local-cluster/ingress-application.yaml
 
+# Wait for the ApplicationSet controller to create the Application
+echo "Waiting for Argo CD ApplicationSet to generate the ingress application..."
+kubectl wait --for=existence application/ingress -n argocd --timeout=2m
+echo "Application 'ingress' created."
+
 # Wait for the ingress-nginx application to be healthy
 sleep 5
 echo "Waiting for the ingress-nginx application to become healthy..."
@@ -259,6 +264,11 @@ kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server -
 
 # With the full params in git, we can now apply the other appsets
 application.sh --file local-cluster/vault-application.yaml
+
+# Wait for the ApplicationSet controller to create the Application
+echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
+kubectl wait --for=existence application/vault -n argocd --timeout=2m
+echo "Application 'vault' created."
 
 # Wait for vault to start
 while ( true ); do
