@@ -43,6 +43,12 @@ spec:
                 enable_gzip: true
               auth:
                 oauth_allow_insecure_email_lookup: true
+            hostAliases:
+            - ip: '{{.clusterIP}}'
+              hostnames:
+              - mimir.{{.dnsSuffix}}
+              - loki.{{.dnsSuffix}}
+              - tempo.{{.dnsSuffix}}
             ingress:
               enabled: true
               ingressClassName: nginx
