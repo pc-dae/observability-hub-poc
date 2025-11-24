@@ -172,14 +172,7 @@ kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server -
 
 application.sh --file local-cluster/core-services-app.yaml
 
-# Apply the ingress appset
-kubectl apply -f local-cluster/ingress-appset.yaml
-
-# Wait for the ApplicationSet controller to create the Application
-sleep 5
-echo "Waiting for Argo CD ApplicationSet to generate the ingress-nginx application..."
-kubectl wait --for=condition=ResourcesUpToDate=True applicationset/ingress -n argocd --timeout=2m
-echo "ApplicationSet 'ingress' is up to date."
+application.sh --file local-cluster/ingress-appset.yaml
 
 # Wait for the ingress-nginx application to be healthy
 sleep 5
@@ -265,13 +258,7 @@ kubectl rollout restart deployment argocd-repo-server -n argocd
 kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
 
 # With the full params in git, we can now apply the other appsets
-kubectl apply -f local-cluster/vault-appset.yaml
-
-# Wait for the ApplicationSet controller to create the Application
-sleep 5
-echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
-kubectl wait --for=condition=ResourcesUpToDate=True applicationset/vault -n argocd --timeout=2m
-echo "ApplicationSet 'vault' is up to date."
+application.sh --file local-cluster/vault-appset.yaml
 
 # Wait for vault to start
 while ( true ); do
