@@ -35,6 +35,8 @@ spec:
           values: |
             mimir:
               structuredConfig:
+                limits_overrides:
+                  out_of_order_time_window: 5m
                 memberlist:
                   join_members:
                     - '{{ "{{" }} printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace {{ "}}" }}'
@@ -78,7 +80,7 @@ spec:
                   scheduler_address: 'mimir-query-scheduler.monitoring.svc.cluster.local:9095'
             minio:
               initJob:
-                enabled: false
+                enabled: true
       destination:
         server: 'https://kubernetes.default.svc'
         namespace: '{{.namespace}}'

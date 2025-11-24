@@ -220,7 +220,7 @@ kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server -
 kubectl wait --for=condition=Available -n ingress-nginx deployment/ingress-ingress-nginx-controller --timeout=2m
 
 echo "Giving services a moment to initialize..."
-sleep 10
+sleep 30
 
 echo "Logging in to Argo CD via Ingress..."
 ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
