@@ -174,10 +174,13 @@ envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
 
 echo "Restarting Argo CD server to apply Ingress configuration..."
 kubectl rollout restart deployment argocd-server -n argocd
+kubectl rollout restart deployment argocd-repo-server -n argocd
 kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
+kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
+
 
 echo "Giving Argo CD server a moment to initialize..."
-sleep 5
+sleep 10
 
 echo "Logging in to Argo CD via Ingress..."
 ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)

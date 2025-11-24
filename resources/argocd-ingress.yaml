@@ -22,4 +22,4 @@ spec:
   tls:
   - hosts:
     - argocd.${LOCAL_DNS}
-    secretName: argocd-tls
+    secretName: argocd-servertls
