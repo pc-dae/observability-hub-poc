@@ -77,6 +77,7 @@ function setup_argocd_password() {
       }}"
     kubectl -n argocd rollout restart deployment argocd-server
   fi
+  kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found=true
 }
 
 echo "Waiting for cluster to be ready"
