@@ -168,9 +168,14 @@ kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingres
 echo "Application 'ingress-nginx' is healthy."
 
 echo "Issuing TLS certificate for Argo CD server..."
-kubectl apply -f resources/argocd-server-cert.yaml
+# Delete the existing certificate to ensure a new one with the correct SANs is created.
+kubectl delete certificate argocd-tls -n argocd --ignore-not-found=true
+# Also delete the old secret to ensure it's fully regenerated.
+kubectl delete secret argocd-tls -n argocd --ignore-not-found=true
+envsubst < resources/argocd-server-cert.yaml | kubectl apply -f -
+
 echo "Waiting for Argo CD server TLS secret to be created by cert-manager..."
-until kubectl get secret argocd-server-tls -n argocd > /dev/null 2>&1; do
+until kubectl get secret argocd-tls -n argocd > /dev/null 2>&1; do
   sleep 2
 done
 echo "Argo CD server TLS secret is ready."
