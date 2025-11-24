@@ -57,27 +57,29 @@ function setup_argocd_password() {
   if [ -f "resources/.argocd-admin-password" ]; then
     echo "Using existing generated Argo CD admin password."
   else
-    echo "Generating new Argo CD admin password and patching argocd-secret."
-    # The ARGOCD_PASSWORD variable is made local to this function
+    echo "Generating new Argo CD admin password..."
     local ARGOCD_PASSWORD
-    ARGOCD_PASSWORD=$(openssl rand -base64 10)
+    ARGOCD_PASSWORD=$(openssl rand -base64 12)
     echo -n "$ARGOCD_PASSWORD" > resources/.argocd-admin-password
-
-    # Wait for the argocd-secret to be created by the controller
-    until kubectl get secret argocd-secret -n argocd > /dev/null 2>&1; do
-      echo "Waiting for argocd-secret to be created..."
-      sleep 2
-    done
-    BCRYPT_HASH=$(argocd account bcrypt --password "$ARGOCD_PASSWORD")
-    CURRENT_TIME=$(date +%Y-%m-%dT%H:%M:%SZ)
-    kubectl -n argocd patch secret argocd-secret \
-      -p "{\"stringData\": {
-        \"admin.password\": \"$BCRYPT_HASH\",
-        \"admin.passwordMtime\": \"$CURRENT_TIME\"
-      }}"
-    kubectl -n argocd rollout restart deployment argocd-server
   fi
-  kubectl -n argocd delete secret argocd-initial-admin-secret --ignore-not-found=true
+}
+
+function patch_argocd_secret() {
+  echo "Patching argocd-secret..."
+  local ARGOCD_PASSWORD
+  ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
+  local BCRYPT_HASH
+  BCRYPT_HASH=$(argocd account bcrypt --password "$ARGOCD_PASSWORD")
+
+  # Wait for the argocd-secret to be created by the controller
+  until kubectl get secret argocd-secret -n argocd > /dev/null 2>&1; do
+    echo "Waiting for argocd-secret to be created..."
+    sleep 2
+  done
+
+  kubectl -n argocd patch secret argocd-secret \
+    -p '{"data": {"admin.password": "'$(echo -n "$BCRYPT_HASH" | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
+  echo "Patched argocd-secret with new password hash."
 }
 
 echo "Waiting for cluster to be ready"
@@ -86,6 +88,9 @@ kubectl wait --for=condition=Available  -n kube-system deployment coredns
 kubectl taint nodes desktop-control-plane node-role.kubernetes.io/control-plane:NoSchedule- || true
 
 git config pull.rebase true
+
+# Ensure initial secret is gone before applying
+kubectl delete secret argocd-initial-admin-secret -n argocd --ignore-not-found=true
 
 kubectl apply -f local-cluster/core/argocd/namespace.yaml
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -96,6 +101,7 @@ kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-
 sleep 2
 
 setup_argocd_password
+patch_argocd_secret
 
 # Create a CA Certificate for the ingress controller to use
 
@@ -186,7 +192,6 @@ echo "Logging in to Argo CD via Ingress..."
 ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
 # Retry login in case server is not immediately ready
 for i in {1..5}; do
-  # Note: --insecure is removed as we now have a fully trusted TLS chain
   if argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD"; then
     echo "Argo CD login successful."
     break
