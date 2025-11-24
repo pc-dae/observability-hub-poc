@@ -244,10 +244,6 @@ echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
 kubectl wait --for=condition=ResourcesUpToDate=True applicationset/vault -n argocd --timeout=2m
 echo "ApplicationSet 'vault' is up to date."
 
-echo "Configuring argocd-server for Ingress"
-kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
-envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
-
 # Wait for vault to start
 while ( true ); do
   echo "Waiting for vault to start"
