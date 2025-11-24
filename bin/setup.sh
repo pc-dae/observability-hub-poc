@@ -176,7 +176,7 @@ application.sh --file local-cluster/ingress-application.yaml
 
 # Wait for the ApplicationSet controller to create the Application
 echo "Waiting for Argo CD ApplicationSet to generate the ingress application..."
-kubectl wait --for=existence application/ingress -n argocd --timeout=2m
+kubectl wait --for=jsonpath='{.metadata.name}'=ingress application/ingress -n argocd --timeout=2m
 echo "Application 'ingress' created."
 
 # Wait for the ingress-nginx application to be healthy
@@ -267,7 +267,7 @@ application.sh --file local-cluster/vault-application.yaml
 
 # Wait for the ApplicationSet controller to create the Application
 echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
-kubectl wait --for=existence application/vault -n argocd --timeout=2m
+kubectl wait --for=jsonpath='{.metadata.name}'=vault application/vault -n argocd --timeout=2m
 echo "Application 'vault' created."
 
 # Wait for vault to start
