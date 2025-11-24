@@ -40,6 +40,20 @@ spec:
                 memberlist:
                   join_members:
                     - '{{ "{{" }} printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace {{ "}}" }}'
+            ingress:
+              enabled: true
+              ingressClassName: nginx
+              annotations:
+                cert-manager.io/cluster-issuer: local-ca-issuer
+              hosts:
+                - host: mimir.{{.dnsSuffix}}
+                  paths:
+                    - path: /
+                      pathType: Prefix
+              tls:
+                - secretName: mimir-tls
+                  hosts:
+                    - mimir.{{.dnsSuffix}}
             alertmanager:
               enabled: true
               config:
@@ -50,20 +64,6 @@ spec:
                 alertmanager_url: http://localhost:8080/alertmanager
             nginx:
               enabled: true
-              ingress:
-                enabled: true
-                ingressClassName: nginx
-                annotations:
-                  cert-manager.io/cluster-issuer: local-ca-issuer
-                hosts:
-                  - host: mimir.{{.dnsSuffix}}
-                    paths:
-                      - path: /
-                        pathType: Prefix
-                tls:
-                  - secretName: mimir-tls
-                    hosts:
-                      - mimir.{{.dnsSuffix}}
             compactor:
               enabled: true
             query_scheduler:
