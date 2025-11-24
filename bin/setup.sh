@@ -321,14 +321,5 @@ application.sh --file local-cluster/addons.yaml
 
 setup_grafana_password
 
-kubectl apply -f local-cluster/grafana-appset.yaml
-kubectl apply -f local-cluster/mimir-appset.yaml
-kubectl apply -f local-cluster/loki-appset.yaml
-kubectl apply -f local-cluster/tempo-appset.yaml
-kubectl apply -f local-cluster/otel-collector-appset.yaml
-
-kapp deploy -a cert-manager -f cert-manager.yaml -y
-kapp deploy -a local-ca-issuer -f cert-config -y
-
 # Apply appsets
-kubectl apply -f local-cluster/appsets.yaml
+application.sh --file local-cluster/appsets.yaml
