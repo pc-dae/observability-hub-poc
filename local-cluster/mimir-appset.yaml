@@ -48,13 +48,12 @@ spec:
                   hosts:
                     - mimir.{{.dnsSuffix}}
 
-            mimir:
-              structuredConfig:
-                limits_overrides:
-                  out_of_order_time_window: 5m
-                memberlist:
-                  join_members:
-                    - '{{ "{{" }} printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace {{ "}}" }}'
+            structuredConfig:
+              limits_overrides:
+                out_of_order_time_window: 5m
+              memberlist:
+                join_members:
+                  - '{{ "{{" }} printf "%s-gossip-ring.%s.svc.cluster.local" (include "mimir.fullname" .) .Release.Namespace {{ "}}" }}'
 
             alertmanager:
               enabled: true
