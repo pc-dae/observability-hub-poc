@@ -32,7 +32,7 @@ spec:
         chart: '{{.chart}}'
         targetRevision: '{{.version}}'
         helm:
-          valueObject:
+          values: |
             admin:
               existingSecret: grafana-admin-credentials
               userKey: admin-user
