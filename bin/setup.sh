@@ -82,6 +82,26 @@ function patch_argocd_secret() {
   echo "Patched argocd-secret with new password hash."
 }
 
+function setup_grafana_password() {
+  echo "Setting up Grafana admin password..."
+  local GRAFANA_PASSWORD_FILE="resources/.grafana-admin-password"
+  if [ -f "$GRAFANA_PASSWORD_FILE" ]; then
+    echo "Using existing generated Grafana admin password."
+  else
+    echo "Generating new Grafana admin password..."
+    openssl rand -base64 12 > "$GRAFANA_PASSWORD_FILE"
+  fi
+  
+  # Create or update the Kubernetes secret for Grafana
+  local GRAFANA_PASSWORD
+  GRAFANA_PASSWORD=$(cat "$GRAFANA_PASSWORD_FILE")
+  kubectl create secret generic grafana-admin-credentials \
+    --from-literal=admin-user=admin \
+    --from-literal=admin-password="$GRAFANA_PASSWORD" \
+    -n grafana --dry-run=client -o yaml | kubectl apply -f -
+  echo "Secret 'grafana-admin-credentials' created/updated."
+}
+
 echo "Waiting for cluster to be ready"
 kubectl wait --for=condition=Available  -n kube-system deployment coredns
 # The minus sign (-) at the end removes the taint
@@ -298,6 +318,8 @@ if [[ `git status --porcelain` ]]; then
 fi
 
 application.sh --file local-cluster/addons.yaml
+
+setup_grafana_password
 
 kubectl apply -f local-cluster/grafana-appset.yaml
 kubectl apply -f local-cluster/mimir-appset.yaml

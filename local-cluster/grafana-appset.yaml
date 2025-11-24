@@ -32,26 +32,11 @@ spec:
         chart: '{{.chart}}'
         targetRevision: '{{.version}}'
         helm:
-          valuesObject:
-            adminPassword: "admin"
-            ingress:
-              enabled: true
-              ingressClassName: "nginx"
-              annotations:
-                cert-manager.io/cluster-issuer: "local-ca-issuer"
-              hosts:
-                - "grafana.{{.dnsSuffix}}"
-              tls:
-                - secretName: "grafana-tls"
-                  hosts:
-                    - "grafana.{{.dnsSuffix}}"
-            hostAliases:
-            - ip: '{{.clusterIP}}'
-              hostnames:
-              - mimir.{{.dnsSuffix}}
-              - loki.{{.dnsSuffix}}
-              - tempo.{{.dnsSuffix}}
-              - grafana.{{.dnsSuffix}}
+          valueObject:
+            admin:
+              existingSecret: grafana-admin-credentials
+              userKey: admin-user
+              passwordKey: admin-password
             grafana.ini:
               server:
                 root_url: "https://grafana.{{.dnsSuffix}}"
