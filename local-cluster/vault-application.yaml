@@ -1,7 +1,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
-  name: vault-appset-app
+  name: vault-appset
   namespace: argocd
 spec:
   project: default
