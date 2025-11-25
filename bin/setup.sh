@@ -149,12 +149,20 @@ function commit_and_push() {
 }
 
 function wait_for_appset() {
+  echo "Waiting for Argo CD ApplicationSet $1 to be created..."
+  until kubectl get applicationset $1 -n argocd > /dev/null 2>&1; do
+    sleep 2
+  done
   echo "Waiting for Argo CD ApplicationSet to create the application..."
   kubectl wait --for=jsonpath='{.metadata.name}'=$1 applicationset/$1 -n argocd --timeout=2m
   echo "ApplicationSet '$1' created."
 }
 
 function wait_for_app() {
+  echo "Waiting for Argo CD Application $1 to be created..."
+  until kubectl get application $1 -n argocd > /dev/null 2>&1; do
+    sleep 2
+  done
   echo "Waiting for Argo CD Application to be healthy..."
   kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/$1 -n argocd --timeout=5m
   echo "Application '$1' is healthy."
