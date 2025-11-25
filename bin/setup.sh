@@ -162,8 +162,14 @@ function setup_cluster_params() {
   else
     export CLUSTER_IP="TBA"
   fi
-  export CA_CERT=$(sed 's/^/    /' resources/CA.cer)
+  
+  # Perform substitution for simple values
   cat resources/cluster-params.yaml | envsubst > local-cluster/config/cluster-params.yaml
+  
+  # Append the multi-line CA certificate separately to avoid envsubst issues
+  echo "caCert: |" >> local-cluster/config/cluster-params.yaml
+  sed 's/^/  /' resources/CA.cer >> local-cluster/config/cluster-params.yaml
+
   git add local-cluster/config/cluster-params.yaml
   commit_and_push "update cluster params"
 }
