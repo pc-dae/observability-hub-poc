@@ -283,6 +283,8 @@ EOF
 
 apply_and_wait "local-cluster/cert-manager/application.yaml"
 
+kubectl apply -f local-cluster/cert-config/cert-config.yaml
+
 apply_and_wait "local-cluster/core-services-app.yaml"
 
 apply_and_wait "local-cluster/ingress-application.yaml"
