@@ -6,8 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: '{{.repoUrl}}'
-    targetRevision: '{{.targetRevision}}'
+    repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+    targetRevision: main
     path: local-cluster/core/appsets/vault
   destination:
     server: https://kubernetes.default.svc
