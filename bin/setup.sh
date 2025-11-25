@@ -166,9 +166,9 @@ function setup_cluster_params() {
   # Perform substitution for simple values
   cat resources/cluster-params.yaml | envsubst > local-cluster/config/cluster-params.yaml
   
-  # Perform substitution for the CA cert and append it
-  export CA_CERT=$(sed 's/^/  /' resources/CA.cer)
-  cat resources/cacert.yaml | envsubst >> local-cluster/config/cluster-params.yaml
+  # Append the multi-line CA certificate directly to avoid envsubst parsing issues
+  echo "caCert: |" >> local-cluster/config/cluster-params.yaml
+  sed 's/^/  /' resources/CA.cer >> local-cluster/config/cluster-params.yaml
 
   git add local-cluster/config/cluster-params.yaml
   commit_and_push "update cluster params"
