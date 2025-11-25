@@ -131,9 +131,10 @@ function setup_cluster_params() {
   else
     export CLUSTER_IP="TBA"
   fi
-    cat resources/cluster-params.yaml | envsubst > local-cluster/config/cluster-params.yaml
-    git add local-cluster/config/cluster-params.yaml
-    commit_and_push "update cluster params"
+  export CA_CERT=$(sed 's/^/    /' resources/CA.cer)
+  cat resources/cluster-params.yaml | envsubst > local-cluster/config/cluster-params.yaml
+  git add local-cluster/config/cluster-params.yaml
+  commit_and_push "update cluster params"
 }
 
 function commit_and_push() {
