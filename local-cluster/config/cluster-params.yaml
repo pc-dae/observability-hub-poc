@@ -1,5 +1,5 @@
 dnsSuffix: kubernetes.docker.internal
-clusterIP: 10.96.231.210
+clusterIP: TBA
 storageClass: hostpath
 namespaces:
  - vault
@@ -10,6 +10,7 @@ namespaces:
  - grafana
  - otel-collector
  - cert-manager
+
 caCert: |
   -----BEGIN CERTIFICATE-----
   MIIFATCCAumgAwIBAgIUaXigIVqPxVIBNOLdEl7+0iY5WPswDQYJKoZIhvcNAQEL
