@@ -14,5 +14,5 @@ metadata:
   namespace: {{ . }}
 data:
   CA.cer: |
-{{ .Values.caCert | nindent 4 }}
+{{- $.Values.caCert | nindent 4 }}
 {{- end }}
