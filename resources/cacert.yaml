@@ -1,0 +1,2 @@
+caCert: |
+  ${CA_CERT}
