@@ -123,7 +123,9 @@ function setup_grafana_password() {
 }
 
 function setup_cluster_params() {
+  set +e
   THE_CLUSTER_IP="$(kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller -o jsonpath='{.spec.clusterIP}' 2>/dev/null)"
+  set -e
   if [ -n "$THE_CLUSTER_IP" ]; then
     export CLUSTER_IP="${THE_CLUSTER_IP}"
   else
