@@ -243,7 +243,7 @@ apply_and_wait "local-cluster/cert-manager/application.yaml"
 
 apply_and_wait "local-cluster/core-services-app.yaml"
 
-application.sh --file local-cluster/ingress-application.yaml
+apply_and_wait "local-cluster/ingress-application.yaml"
 
 wait_for_appset ingress
 
