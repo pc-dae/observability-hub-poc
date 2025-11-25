@@ -9,7 +9,8 @@ namespaces:
  - argocd
  - grafana
  - otel-collector
- - cert-managercaCert: |
+ - cert-manager
+caCert: |
   -----BEGIN CERTIFICATE-----
   MIIFATCCAumgAwIBAgIUaXigIVqPxVIBNOLdEl7+0iY5WPswDQYJKoZIhvcNAQEL
   BQAwEDEOMAwGA1UEAwwFcGF1bGMwHhcNMjUwMTIwMTk1OTI4WhcNMzUwMTE4MTk1
