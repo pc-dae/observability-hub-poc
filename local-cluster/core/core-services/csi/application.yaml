@@ -23,12 +23,3 @@ spec:
       selfHeal: true
     syncOptions:
     - Replace=true
-    - SkipDryRunOnMissingResource=true
-    - ApplyOutOfSyncOnly=true
-  ignoreDifferences:
-  - group: rbac.authorization.k8s.io
-    kind: ClusterRole
-    name: csi-secrets-store-secrets-store-csi-driver-upgrade-crds
-  - group: rbac.authorization.k8s.io
-    kind: ClusterRoleBinding
-    name: csi-secrets-store-secrets-store-csi-driver-upgrade-crds

@@ -8,7 +8,7 @@ spec:
   source:
     repoURL: '{{.repoUrl}}'
     targetRevision: '{{.targetRevision}}'
-    path: local-cluster/appsets
+    path: local-cluster/addons/appsets
   destination:
     server: https://kubernetes.default.svc
     namespace: argocd

@@ -11,8 +11,8 @@ stringData:
     datasources:
     - name: Mimir
       type: prometheus
-      uid: PAE45454D0EDB9216
-      url: https://mimir.${LOCAL_DNS}/prometheus
+      uid: mimir
+      url: https://mimir.{{ .Values.dnsSuffix }}/prometheus
       access: proxy
       isDefault: true
       jsonData:
@@ -21,12 +21,12 @@ stringData:
         httpHeaderName1: "X-Scope-OrgID"
       secureJsonData:
         tlsCACert: |
-${CA_CERT}
+{{ .Values.caCert | nindent 10 }}
         httpHeaderValue1: "fake"
     - name: Loki
       type: loki
       uid: loki
-      url: https://loki.${LOCAL_DNS}
+      url: https://loki.{{ .Values.dnsSuffix }}
       access: proxy
       jsonData:
         tlsSkipVerify: false
@@ -34,12 +34,12 @@ ${CA_CERT}
         httpHeaderName1: "X-Scope-OrgID"
       secureJsonData:
         tlsCACert: |
-${CA_CERT}
+{{ .Values.caCert | nindent 10 }}
         httpHeaderValue1: "fake"
     - name: Tempo
       type: tempo
       uid: tempo
-      url: https://tempo.${LOCAL_DNS}
+      url: https://tempo.{{ .Values.dnsSuffix }}
       access: proxy
       jsonData:
         tlsSkipVerify: false
@@ -47,5 +47,5 @@ ${CA_CERT}
         httpHeaderName1: "X-Scope-OrgID"
       secureJsonData:
         tlsCACert: |
-${CA_CERT}
+{{ .Values.caCert | nindent 10 }}
         httpHeaderValue1: "fake"

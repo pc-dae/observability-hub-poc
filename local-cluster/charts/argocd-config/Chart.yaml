@@ -1,0 +1,4 @@
+apiVersion: v2
+name: argocd-config
+description: A Helm chart to configure Argo CD's Certificate and Ingress.
+version: 0.1.0

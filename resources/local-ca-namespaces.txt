@@ -1,7 +1,0 @@
-vault
-ingress-nginx
-monitoring
-kafka
-argocd
-grafana
-otel-collector

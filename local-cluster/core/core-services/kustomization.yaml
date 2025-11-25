@@ -4,5 +4,4 @@ resources:
 - csi/application.yaml
 - external-secrets/application.yaml
 - reloader/application.yaml
-- nginx/namespace.yaml
-- vault/namespace.yaml
+

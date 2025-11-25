@@ -1,0 +1,18 @@
+{{- range .Values.namespaces }}
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: {{ . }}
+  labels:
+    argocd.argoproj.io/managed-by: argocd
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: local-ca
+  namespace: {{ . }}
+data:
+  CA.cer: |
+{{ .Values.caCert | nindent 4 }}
+{{- end }}

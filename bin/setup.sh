@@ -39,6 +39,23 @@ function args()
   done
 }
 
+function apply_and_wait() {
+  local application_file=$1
+  local name=$(yq '.metadata.name' $application_file)
+  kubectl apply -f $application_file
+  
+  # Wait for the $name application to be healthy
+  sleep 5
+  echo "Waiting for the $name application to become healthy..."
+  kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/$name -n argocd --timeout=5m
+  local return_code=$?
+  if [ $return_code -ne 0 ]; then
+    echo "Application '$name' is not healthy" >&2
+    exit $return_code
+  fi
+  echo "Application '$name' is healthy."
+}
+
 args "$@"
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
@@ -65,6 +82,7 @@ function setup_argocd_password() {
 }
 
 function patch_argocd_secret() {
+  setup_argocd_password
   echo "Patching argocd-secret..."
   local ARGOCD_PASSWORD
   ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
@@ -76,6 +94,8 @@ function patch_argocd_secret() {
     echo "Waiting for argocd-secret to be created..."
     sleep 2
   done
+  # Ensure initial secret is gone before applying
+  kubectl delete secret argocd-initial-admin-secret -n argocd --ignore-not-found=true
 
   kubectl -n argocd patch secret argocd-secret \
     -p '{"data": {"admin.password": "'$(echo -n "$BCRYPT_HASH" | base64 -w 0)'", "admin.passwordMtime": "'$(date +%Y-%m-%dT%H:%M:%SZ | base64 -w 0)'"}}'
@@ -102,28 +122,94 @@ function setup_grafana_password() {
   echo "Secret 'grafana-admin-credentials' created/updated."
 }
 
+function setup_cluster_params() {
+  THE_CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller -o jsonpath='{.spec.clusterIP}' 2>/dev/null)
+  if [ -n "$THE_CLUSTER_IP" ]; then
+    export CLUSTER_IP="${THE_CLUSTER_IP}"
+  else
+    export CLUSTER_IP="TBA"
+  fi
+    cat resources/cluster-params.yaml | envsubst > local-cluster/config/cluster-params.yaml
+    git add local-cluster/config/cluster-params.yaml
+    commit_and_push "update cluster params"
+  fi
+}
+
+function commit_and_push() {
+  if [[ `git status --porcelain` ]]; then
+    git commit -m "$@"
+    git pull
+    git push
+  fi
+  # Force a refresh of the Argo CD repo server to pick up the latest git changes
+  echo "Refreshing Argo CD repository cache..."
+  kubectl rollout restart deployment argocd-repo-server -n argocd
+  kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
+}
+
+function wait_for_appset() {
+  echo "Waiting for Argo CD ApplicationSet to create the application..."
+  kubectl wait --for=jsonpath='{.metadata.name}'=$1 applicationset/$1 -n argocd --timeout=2m
+  echo "ApplicationSet '$1' created."
+}
+
+function wait_for_app() {
+  echo "Waiting for Argo CD Application to be healthy..."
+  kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/$1 -n argocd --timeout=5m
+  echo "Application '$1' is healthy."
+}
+
+function config_argocd_ingress() {
+  echo "Configuring Argo CD server for Ingress..."
+  # Add the --insecure flag to the argocd-server deployment.
+  # This tells the server that TLS is being terminated upstream by the Ingress.
+  kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
+
+  # Set the public URL in the argocd-cm configmap
+  kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"url": "https://argocd.'${LOCAL_DNS}'"}}'
+
+  apply_and_wait "local-cluster/argocd-config/application.yaml"
+  
+  echo "Restarting Argo CD server and Ingress to apply Ingress configuration..."
+  kubectl rollout restart deployment argocd-server -n argocd
+  deployment_name=$(kubectl get deployments -n ingress-nginx -o jsonpath='{.items[0].metadata.name}')
+  kubectl rollout restart deployment -n ingress-nginx $deployment_name
+  kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
+  kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
+  kubectl wait --for=condition=Available -n ingress-nginx deployment/ingress-ingress-nginx-controller --timeout=2m
+
+  echo "Giving services a moment to initialize..."
+  sleep 30
+
+  echo "Logging in to Argo CD via Ingress..."
+  ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
+  # Retry login in case server is not immediately ready
+  for i in {1..5}; do
+    if argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD"; then
+      echo "Argo CD login successful."
+      break
+    fi
+    if [ $i -eq 5 ]; then
+      echo "Failed to log in to Argo CD after multiple attempts."
+      exit 1
+    fi
+    echo "Login failed, retrying in 5 seconds..."
+    sleep 5
+  done
+}
+
+
 echo "Waiting for cluster to be ready"
 kubectl wait --for=condition=Available  -n kube-system deployment coredns
 # The minus sign (-) at the end removes the taint
 kubectl taint nodes desktop-control-plane node-role.kubernetes.io/control-plane:NoSchedule- || true
 
-git config pull.rebase true
-
-# Ensure initial secret is gone before applying
-kubectl delete secret argocd-initial-admin-secret -n argocd --ignore-not-found=true
-
-kubectl apply -f local-cluster/core/argocd/namespace.yaml
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 echo "Waiting for argocd controller to start"
-sleep 5
-kubectl wait --timeout=5m --for=condition=Available -n argocd deployment argocd-server
-sleep 2
+kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=5m
 
-setup_argocd_password
 patch_argocd_secret
-
-# Create a CA Certificate for the ingress controller to use
 
 if [ -f resources/CA.cer ]; then
   echo "Certificate Authority already exists"
@@ -137,9 +223,9 @@ else
   fi
 fi
 
-application.sh --file local-cluster/core/cert-manager/application.yaml
+setup_cluster_params
 
-# Install CA Certificate secret so Cert Manager can issue certificates using our CA
+apply_and_wait "local-cluster/namespaces/application.yaml"
 
 kubectl apply -f - <<EOF
 apiVersion: v1
@@ -152,89 +238,15 @@ data:
   tls.key: $(base64 ${b64w} -i resources/CA.key)
 EOF
 
-# Add CA Certificates to namespaces where it is required
+apply_and_wait "local-cluster/cert-manager/application.yaml"
 
-namespace_list=$(local_or_global resources/local-ca-namespaces.txt)
-export CA_CERT="$(cat resources/CA.cer)"
-for nameSpace in $(cat $namespace_list); do
-  export nameSpace
-  cat $(local_or_global resources/local-ca-ns.yaml) |envsubst | kubectl apply -f -
-  kubectl create configmap local-ca -n ${nameSpace} --from-file=resources/CA.cer --dry-run=client -o yaml >/tmp/ca.yaml
-  kubectl apply -f /tmp/ca.yaml
-done
-
-kubectl apply -f local-cluster/core/cert-manager/cert-config.yaml
-
-# Force a refresh of the Argo CD repo server to pick up the latest git changes
-echo "Refreshing Argo CD repository cache..."
-kubectl rollout restart deployment argocd-repo-server -n argocd
-kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
-
-application.sh --file local-cluster/core-services-app.yaml
+apply_and_wait "local-cluster/core-services-app.yaml"
 
 application.sh --file local-cluster/ingress-application.yaml
 
-# Wait for the ApplicationSet controller to create the Application
-echo "Waiting for Argo CD ApplicationSet to generate the ingress application..."
-kubectl wait --for=jsonpath='{.metadata.name}'=ingress application/ingress -n argocd --timeout=2m
-echo "Application 'ingress' created."
+wait_for_appset ingress
 
-# Wait for the ingress-nginx application to be healthy
-sleep 5
-echo "Waiting for the ingress-nginx application to become healthy..."
-kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/ingress -n argocd --timeout=5m
-echo "Application 'ingress-nginx' is healthy."
-
-echo "Configuring Argo CD server for Ingress..."
-# Add the --insecure flag to the argocd-server deployment.
-# This tells the server that TLS is being terminated upstream by the Ingress.
-kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
-
-# Set the public URL in the argocd-cm configmap
-kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"url": "https://argocd.'${LOCAL_DNS}'"}}'
-
-echo "Issuing TLS certificate for Argo CD server..."
-# Delete the existing certificate to ensure a new one with the correct SANs is created.
-kubectl delete certificate argocd-server-tls -n argocd --ignore-not-found=true
-# Also delete the old secret to ensure it's fully regenerated.
-kubectl delete secret argocd-server-tls -n argocd --ignore-not-found=true
-envsubst < resources/argocd-server-cert.yaml | kubectl apply -f -
-
-echo "Waiting for Argo CD server TLS secret to be created by cert-manager..."
-until kubectl get secret argocd-server-tls -n argocd > /dev/null 2>&1; do
-  sleep 2
-done
-echo "Argo CD server TLS secret is ready."
-
-echo "Applying Ingress for Argo CD..."
-envsubst < resources/argocd-ingress.yaml | kubectl apply -f -
-
-echo "Restarting Argo CD server and Ingress to apply Ingress configuration..."
-kubectl rollout restart deployment argocd-server -n argocd
-kubectl rollout restart deployment argocd-repo-server -n argocd
-kubectl rollout restart deployment -n ingress-nginx ingress-ingress-nginx-controller
-kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
-kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
-kubectl wait --for=condition=Available -n ingress-nginx deployment/ingress-ingress-nginx-controller --timeout=2m
-
-echo "Giving services a moment to initialize..."
-sleep 30
-
-echo "Logging in to Argo CD via Ingress..."
-ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
-# Retry login in case server is not immediately ready
-for i in {1..5}; do
-  if argocd login "argocd.${LOCAL_DNS}" --grpc-web --username admin --password "$ARGOCD_PASSWORD"; then
-    echo "Argo CD login successful."
-    break
-  fi
-  if [ $i -eq 5 ]; then
-    echo "Failed to log in to Argo CD after multiple attempts."
-    exit 1
-  fi
-  echo "Login failed, retrying in 5 seconds..."
-  sleep 5
-done
+wait_for_app ingress
 
 echo "Waiting for ingress service to be created..."
 while ! kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller > /dev/null 2>&1; do
@@ -242,33 +254,17 @@ while ! kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller > /dev
 done
 echo "Ingress service found."
 
-export CLUSTER_IP=$(kubectl get svc -n ingress-nginx ingress-ingress-nginx-controller -o jsonpath='{.spec.clusterIP}')
+setup_cluster_params
 
-# Now that we have the cluster IP, update the params file and push to git again
-cat <<EOF > local-cluster/config/cluster-params.yaml
-dnsSuffix: ${local_dns}
-clusterIP: "${CLUSTER_IP}"
-storageClass: hostpath
-EOF
-git add local-cluster/config/cluster-params.yaml
-if [[ `git status --porcelain` ]]; then
-  git commit -m "update cluster params with cluster IP"
-  git pull
-  git push
-fi
-
-# Force another refresh so it picks up the clusterIP
-echo "Refreshing Argo CD repository cache..."
-kubectl rollout restart deployment argocd-repo-server -n argocd
-kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
+config_argocd_ingress
 
 # With the full params in git, we can now apply the other appsets
-application.sh --file local-cluster/vault-application.yaml
 
-# Wait for the ApplicationSet controller to create the Application
-echo "Waiting for Argo CD ApplicationSet to generate the vault application..."
-kubectl wait --for=jsonpath='{.metadata.name}'=vault application/vault -n argocd --timeout=2m
-echo "Application 'vault' created."
+apply_and_wait "local-cluster/vault-application.yaml"
+
+wait_for_appset vault
+
+wait_for_app vault
 
 # Wait for vault to start
 while ( true ); do
@@ -304,19 +300,11 @@ secrets.sh $debug_str --tls-skip --secrets $PWD/resources/secrets/github-secrets
 sleep 10
 kubectl rollout restart deployment -n external-secrets external-secrets
 
-export CA_CERT=$(kubectl get configmap local-ca -n ingress-nginx -o jsonpath='{.data.CA\.cer}' | sed 's/^/          /')
-envsubst < resources/grafana-datasources.yaml > local-cluster/addons/grafana/grafana-datasources.yaml
+apply_and_wait "local-cluster/grafana-datasources/application.yaml"
 
-git add local-cluster/addons/grafana/grafana-datasources.yaml
-if [[ `git status --porcelain` ]]; then
-  git commit -m "grafana datasources"
-  git pull
-  git push
-fi
-
-application.sh --file local-cluster/addons.yaml
+apply_and_wait "local-cluster/addons.yaml"
 
 setup_grafana_password
 
 # Apply appsets
-application.sh --file local-cluster/appsets.yaml
+apply_and_wait "local-cluster/addons-appsets.yaml"

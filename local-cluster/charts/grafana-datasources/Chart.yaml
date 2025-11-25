@@ -1,0 +1,4 @@
+apiVersion: v2
+name: grafana-datasources
+description: A Helm chart for Grafana datasources
+version: 0.1.0

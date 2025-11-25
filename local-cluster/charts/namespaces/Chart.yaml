@@ -1,0 +1,4 @@
+apiVersion: v2
+name: namespaces
+description: A Helm chart to create namespaces from a list in values.
+version: 0.1.0
