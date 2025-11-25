@@ -39,21 +39,52 @@ function args()
   done
 }
 
+function wait_for_app_sync_and_health() {
+  local name=$1
+  echo "Waiting for application '$name' to be created..."
+  until kubectl get application $name -n argocd > /dev/null 2>&1; do
+    echo "  - Application '$name' not found yet. Retrying in 2 seconds..."
+    sleep 2
+  done
+  echo "Application '$name' found. Waiting for it to become Healthy and Synced..."
+
+  local timeout=300 # 5 minutes
+  local start_time=$(date +%s)
+  
+  while true; do
+    local current_time=$(date +%s)
+    if [ $((current_time - start_time)) -ge $timeout ]; then
+      echo "Error: Timeout waiting for application '$name' to be Healthy and Synced."
+      echo "--- Describing Application '$name' for debugging ---"
+      kubectl describe application $name -n argocd
+      echo "----------------------------------------------------"
+      exit 1
+    fi
+
+    local status_json=$(kubectl get application $name -n argocd -o json 2>/dev/null)
+    if [ -z "$status_json" ]; then
+        sleep 2
+        continue
+    fi
+
+    local health_status=$(echo "$status_json" | jq -r '.status.health.status // "Unknown"')
+    local sync_status=$(echo "$status_json" | jq -r '.status.sync.status // "Unknown"')
+
+    if [ "$health_status" == "Healthy" ] && [ "$sync_status" == "Synced" ]; then
+      echo "Application '$name' is Healthy and Synced."
+      return 0
+    fi
+    
+    echo "  - Current state for '$name': Health=$health_status, Sync=$sync_status. Retrying in 5 seconds..."
+    sleep 5
+  done
+}
+
 function apply_and_wait() {
   local application_file=$1
   local name=$(yq '.metadata.name' $application_file)
   kubectl apply -f $application_file
-  
-  # Wait for the $name application to be healthy
-  sleep 5
-  echo "Waiting for the $name application to become healthy..."
-  kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/$name -n argocd --timeout=5m
-  local return_code=$?
-  if [ $return_code -ne 0 ]; then
-    echo "Application '$name' is not healthy" >&2
-    exit $return_code
-  fi
-  echo "Application '$name' is healthy."
+  wait_for_app_sync_and_health "$name"
 }
 
 args "$@"
@@ -160,13 +191,7 @@ function wait_for_appset() {
 }
 
 function wait_for_app() {
-  echo "Waiting for Argo CD Application $1 to be created..."
-  until kubectl get application $1 -n argocd > /dev/null 2>&1; do
-    sleep 2
-  done
-  echo "Waiting for Argo CD Application to be healthy..."
-  kubectl wait --for=jsonpath='{.status.health.status}'=Healthy application/$1 -n argocd --timeout=5m
-  echo "Application '$1' is healthy."
+  wait_for_app_sync_and_health "$1"
 }
 
 function config_argocd_ingress() {
