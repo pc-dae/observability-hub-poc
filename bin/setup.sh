@@ -281,9 +281,9 @@ data:
   tls.key: $(base64 ${b64w} -i resources/CA.key)
 EOF
 
-apply_and_wait "local-cluster/cert-manager/application.yaml"
+apply_and_wait "local-cluster/corecert-manager/application.yaml"
 
-kubectl apply -f local-cluster/cert-config/cert-config.yaml
+kubectl apply -f local-cluster/core/cert-config/cert-config.yaml
 
 apply_and_wait "local-cluster/core-services-app.yaml"
 
