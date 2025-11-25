@@ -133,6 +133,7 @@ function setup_cluster_params() {
   fi
   export CA_CERT=$(sed 's/^/    /' resources/CA.cer)
   cat resources/cluster-params.yaml | envsubst > local-cluster/config/cluster-params.yaml
+  git add local-cluster/config/cluster-params.yaml
   commit_and_push "update cluster params"
 }
 
