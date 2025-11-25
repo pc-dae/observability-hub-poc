@@ -23,4 +23,5 @@ spec:
   tls:
   - hosts:
     - argocd.{{ .Values.dnsSuffix }}
-    secretName: argocd-server-tls
+    - argocd-server.argocd.svc
+    secretName: argocd-tls

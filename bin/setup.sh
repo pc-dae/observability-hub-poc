@@ -167,6 +167,7 @@ function setup_cluster_params() {
   cat resources/cluster-params.yaml | envsubst > local-cluster/config/cluster-params.yaml
   
   # Append the multi-line CA certificate directly to avoid envsubst parsing issues
+  echo "" >> local-cluster/config/cluster-params.yaml
   echo "caCert: |" >> local-cluster/config/cluster-params.yaml
   sed 's/^/  /' resources/CA.cer >> local-cluster/config/cluster-params.yaml
 
@@ -245,6 +246,7 @@ kubectl wait --for=condition=Available  -n kube-system deployment coredns
 # The minus sign (-) at the end removes the taint
 kubectl taint nodes desktop-control-plane node-role.kubernetes.io/control-plane:NoSchedule- || true
 
+kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 echo "Waiting for argocd controller to start"
