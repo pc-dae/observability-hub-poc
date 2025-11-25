@@ -9,5 +9,6 @@ namespaces:
  - argocd
  - grafana
  - otel-collector
+ - cert-manager
 caCert: |
-  ${CA_CERT}
+  
