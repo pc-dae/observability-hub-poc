@@ -99,7 +99,10 @@ spec:
                 resource/set_unique_host:
                   attributes:
                     - key: host.name
-                      from_attribute: k8s.node.name
+                      value: "${env:K8S_NODE_NAME}"
+                      action: upsert
+                    - key: instance
+                      value: "${env:K8S_NODE_NAME}"
                       action: upsert
                 batch: {}
                 memory_limiter:
