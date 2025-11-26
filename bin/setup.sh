@@ -202,26 +202,29 @@ function wait_for_app() {
 }
 
 function config_argocd_ingress() {
-  echo "Configuring Argo CD server for Ingress..."
-  # Add the --insecure flag to the argocd-server deployment.
-  # This tells the server that TLS is being terminated upstream by the Ingress.
-  # kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
+  local expected_url="https://argocd.${LOCAL_DNS}"
+  local current_url=$(kubectl get configmap argocd-cm -n argocd -o jsonpath='{.data.url}' 2>/dev/null)
 
-  # Set the public URL in the argocd-cm configmap
-  kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"url": "https://argocd.'${LOCAL_DNS}'"}}'
+  if [ "$current_url" != "$expected_url" ]; then
+    echo "Configuring Argo CD server for Ingress..."
+    # Set the public URL in the argocd-cm configmap
+    kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"url": "https://argocd.'${LOCAL_DNS}'"}}'
 
-  apply_and_wait "local-cluster/argocd-config/application.yaml"
-  
-  echo "Restarting Argo CD server and Ingress to apply Ingress configuration..."
-  kubectl rollout restart deployment argocd-server -n argocd
-  deployment_name=$(kubectl get deployments -n ingress-nginx -o jsonpath='{.items[0].metadata.name}')
-  kubectl rollout restart deployment -n ingress-nginx $deployment_name
-  kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
-  kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
-  kubectl wait --for=condition=Available -n ingress-nginx deployment/ingress-ingress-nginx-controller --timeout=2m
+    apply_and_wait "local-cluster/argocd-config/application.yaml"
+    
+    echo "Restarting Argo CD server and Ingress to apply Ingress configuration..."
+    kubectl rollout restart deployment argocd-server -n argocd
+    deployment_name=$(kubectl get deployments -n ingress-nginx -o jsonpath='{.items[0].metadata.name}')
+    kubectl rollout restart deployment -n ingress-nginx $deployment_name
+    kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
+    kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
+    kubectl wait --for=condition=Available -n ingress-nginx deployment/ingress-ingress-nginx-controller --timeout=2m
 
-  echo "Giving services a moment to initialize..."
-  sleep 30
+    echo "Giving services a moment to initialize..."
+    sleep 30
+  else
+    echo "Argo CD Ingress already configured."
+  fi
 
   echo "Logging in to Argo CD via Ingress..."
   ARGOCD_PASSWORD=$(cat resources/.argocd-admin-password)
@@ -309,7 +312,6 @@ apply_and_wait "local-cluster/vault-application.yaml"
 
 wait_for_appset vault
 
-wait_for_app vault
 
 # Wait for vault to start
 while ( true ); do
