@@ -205,7 +205,7 @@ function config_argocd_ingress() {
   echo "Configuring Argo CD server for Ingress..."
   # Add the --insecure flag to the argocd-server deployment.
   # This tells the server that TLS is being terminated upstream by the Ingress.
-  kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
+  # kubectl patch deployment argocd-server -n argocd --type='json' -p='[{"op": "add", "path": "/spec/template/spec/containers/0/args/-", "value": "--insecure"}]'
 
   # Set the public URL in the argocd-cm configmap
   kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"url": "https://argocd.'${LOCAL_DNS}'"}}'
@@ -281,9 +281,9 @@ data:
   tls.key: $(base64 ${b64w} -i resources/CA.key)
 EOF
 
-apply_and_wait "local-cluster/core/cert-manager/application.yaml"
+apply_and_wait "local-cluster/cert-manager-app.yaml"
 
-kubectl apply -f local-cluster/core/cert-manager-issuer/cert-config.yaml
+apply_and_wait "local-cluster/cert-manager-issuer.yaml"
 
 apply_and_wait "local-cluster/core-services-app.yaml"
 
