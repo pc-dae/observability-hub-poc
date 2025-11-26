@@ -216,14 +216,14 @@ function config_argocd_ingress() {
 
     apply_and_wait "local-cluster/argocd-config/application.yaml"
     
-    echo "Restarting Argo CD server and Ingress to apply Ingress configuration..."
+    echo "Restarting Argo CD server to apply configuration..."
     kubectl rollout restart deployment argocd-server -n argocd
-    deployment_name=$(kubectl get deployments -n ingress-nginx -o jsonpath='{.items[0].metadata.name}')
-    kubectl rollout restart deployment -n ingress-nginx $deployment_name
+    # NGINX Ingress Controller automatically reloads configuration, so restart is not typically required
+    # and can cause connectivity issues with Docker Desktop LoadBalancer.
+    
     kubectl wait --for=condition=Available -n argocd deployment/argocd-server --timeout=2m
     kubectl wait --for=condition=Available -n argocd deployment/argocd-repo-server --timeout=2m
-    kubectl wait --for=condition=Available -n ingress-nginx deployment/ingress-ingress-nginx-controller --timeout=2m
-
+    
     echo "Giving services a moment to initialize..."
     sleep 30
   fi
