@@ -7,3 +7,6 @@ resources/*.pem
 resources/*.key
 .cursor/**
 resources/.grafana-admin-password
+# local cluster
+/kind-config.yaml
+/mimir-values.yaml
