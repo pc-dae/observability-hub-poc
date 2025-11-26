@@ -63,7 +63,7 @@ spec:
               config:
                 alertmanager_url: http://localhost:8080/alertmanager
             nginx:
-              enabled: false
+              enabled: true
             compactor:
               enabled: true
             query_scheduler:

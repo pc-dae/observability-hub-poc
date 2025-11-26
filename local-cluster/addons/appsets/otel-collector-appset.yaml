@@ -40,6 +40,11 @@ spec:
             mode: daemonset
             service:
               enabled: true
+            extraEnvs:
+            - name: K8S_NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
             extraVolumes:
             - name: local-ca
               configMap:
@@ -65,9 +70,39 @@ spec:
                 enabled: true
             config:
               receivers:
+                hostmetrics:
+                  collection_interval: 10s
+                  scrapers:
+                    cpu:
+                      enabled: true
+                    memory:
+                      enabled: true
                 kubeletstats:
                   insecure_skip_verify: true
               processors:
+                k8sattributes:
+                  auth_type: "serviceAccount"
+                  passthrough: false
+                  filter:
+                    node_from_env_var: K8S_NODE_NAME 
+                  extract:
+                    metadata:
+                      - k8s.node.name
+                      - k8s.pod.name
+                  pod_association:
+                    - sources:
+                        - from: resource_attribute
+                          name: k8s.pod.name
+                    - sources:
+                        - from: resource_attribute
+                          name: k8s.pod.uid
+                    - sources:
+                        - from: connection
+                resource/set_unique_host:
+                  attributes:
+                    - key: host.name
+                      from_attribute: k8s.node.name
+                      action: upsert
                 batch: {}
                 memory_limiter:
                   check_interval: 1s
@@ -80,6 +115,8 @@ spec:
                     X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
+                  resource_to_telemetry_conversion:
+                    enabled: true
                 otlphttp/loki:
                   endpoint: "https://loki.{{.dnsSuffix}}/otlp"
                   headers:
@@ -100,7 +137,7 @@ spec:
                     exporters: [otlphttp/tempo]
                   metrics:
                     receivers: [otlp, kubeletstats, hostmetrics]
-                    processors: [memory_limiter, k8sattributes, batch]
+                    processors: [memory_limiter, k8sattributes, resource/set_unique_host, batch]
                     exporters: [otlphttp/mimir]
                   logs:
                     receivers: [otlp, filelog]
