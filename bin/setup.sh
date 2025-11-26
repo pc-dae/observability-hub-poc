@@ -18,6 +18,7 @@ function args()
   wait=1
   bootstrap=0
   reset=0
+  reapply=0
   debug_str=""
   cluster_type=""
   arg_list=( "$@" )
@@ -26,6 +27,7 @@ function args()
   while (( arg_index < arg_count )); do
     case "${arg_list[${arg_index}]}" in
           "--debug") set -x; debug_str="--debug";;
+          "--reapply") reapply=1;;
                "-h") usage; exit;;
            "--help") usage; exit;;
                "-?") usage; exit;;
@@ -205,7 +207,9 @@ function config_argocd_ingress() {
   local expected_url="https://argocd.${LOCAL_DNS}"
   local current_url=$(kubectl get configmap argocd-cm -n argocd -o jsonpath='{.data.url}' 2>/dev/null)
 
-  if [ "$current_url" != "$expected_url" ]; then
+  if [ "$current_url" == "$expected_url" ] && [ "$reapply" -eq 0 ]; then
+    echo "Argo CD Ingress already configured. Skipping."
+  else
     echo "Configuring Argo CD server for Ingress..."
     # Set the public URL in the argocd-cm configmap
     kubectl patch configmap argocd-cm -n argocd --type merge -p '{"data":{"url": "https://argocd.'${LOCAL_DNS}'"}}'
@@ -222,8 +226,6 @@ function config_argocd_ingress() {
 
     echo "Giving services a moment to initialize..."
     sleep 30
-  else
-    echo "Argo CD Ingress already configured."
   fi
 
   echo "Logging in to Argo CD via Ingress..."
