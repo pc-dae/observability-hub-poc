@@ -33,20 +33,6 @@ spec:
         targetRevision: '{{.version}}'
         helm:
           values: |
-            ingress:
-              enabled: true
-              ingressClassName: nginx
-              annotations:
-                cert-manager.io/cluster-issuer: local-ca-issuer
-              hosts:
-              - host: mimir.{{.dnsSuffix}}
-                paths:
-                - path: /
-                  pathType: Prefix
-              tls:
-              - secretName: mimir-tls
-                hosts:
-                - mimir.{{.dnsSuffix}}
             mimir:
               structuredConfig:
                 limits:
@@ -64,6 +50,20 @@ spec:
                 alertmanager_url: http://localhost:8080/alertmanager
             nginx:
               enabled: true
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: local-ca-issuer
+                hosts:
+                - host: mimir.{{.dnsSuffix}}
+                  paths:
+                  - path: /
+                    pathType: Prefix
+                tls:
+                - secretName: mimir-tls
+                  hosts:
+                  - mimir.{{.dnsSuffix}}
             compactor:
               enabled: true
             query_scheduler:
