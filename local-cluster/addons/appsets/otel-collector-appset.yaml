@@ -73,10 +73,8 @@ spec:
                 hostmetrics:
                   collection_interval: 10s
                   scrapers:
-                    cpu:
-                      enabled: true
-                    memory:
-                      enabled: true
+                    cpu: {}
+                    memory: {}
                 kubeletstats:
                   insecure_skip_verify: true
               processors:
@@ -115,8 +113,6 @@ spec:
                     X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
-                  resource_to_telemetry_conversion:
-                    enabled: true
                 otlphttp/loki:
                   endpoint: "https://loki.{{.dnsSuffix}}/otlp"
                   headers:
