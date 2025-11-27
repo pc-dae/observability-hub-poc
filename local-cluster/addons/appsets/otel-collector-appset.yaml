@@ -93,7 +93,6 @@ spec:
                         - set(attributes["host"], resource.attributes["host.name"])
                         - set(attributes["container"], resource.attributes["k8s.container.name"])
                         - set(attributes["container_name"], resource.attributes["k8s.container.name"])
-                        - set(attributes["image"], resource.attributes["k8s.container.image_name"])
                   log_statements:
                     - context: log
                       statements:
@@ -113,7 +112,6 @@ spec:
                       - k8s.pod.uid
                       - k8s.namespace.name
                       - k8s.container.name
-                      - k8s.container.image_name
                   pod_association:
                     - sources:
                         - from: resource_attribute
