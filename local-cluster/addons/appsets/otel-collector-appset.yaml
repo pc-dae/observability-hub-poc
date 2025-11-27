@@ -81,6 +81,22 @@ spec:
                 kubeletstats:
                   insecure_skip_verify: true
               processors:
+                transform:
+                  error_mode: ignore
+                  metric_statements:
+                    - context: datapoint
+                      statements:
+                        - set(attributes["pod"], resource.attributes["k8s.pod.name"])
+                        - set(attributes["namespace"], resource.attributes["k8s.namespace.name"])
+                        - set(attributes["node"], resource.attributes["k8s.node.name"])
+                        - set(attributes["host"], resource.attributes["host.name"])
+                  log_statements:
+                    - context: log
+                      statements:
+                        - set(attributes["pod"], resource.attributes["k8s.pod.name"])
+                        - set(attributes["namespace"], resource.attributes["k8s.namespace.name"])
+                        - set(attributes["node"], resource.attributes["k8s.node.name"])
+                        - set(attributes["container"], resource.attributes["k8s.container.name"])
                 k8sattributes:
                   auth_type: "serviceAccount"
                   passthrough: false
@@ -139,11 +155,11 @@ spec:
                     exporters: [otlphttp/tempo]
                   metrics:
                     receivers: [otlp, kubeletstats, hostmetrics]
-                    processors: [memory_limiter, k8sattributes, resource/set_unique_host, batch]
+                    processors: [memory_limiter, k8sattributes, resource/set_unique_host, transform, batch]
                     exporters: [otlphttp/mimir]
                   logs:
                     receivers: [otlp, filelog]
-                    processors: [memory_limiter, k8sattributes, batch]
+                    processors: [memory_limiter, k8sattributes, transform, batch]
                     exporters: [otlphttp/loki]
       destination:
         server: 'https://kubernetes.default.svc'
