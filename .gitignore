@@ -7,4 +7,3 @@ resources/*.pem
 resources/*.key
 .cursor/**
 resources/.grafana-admin-password
-/mimir-values.yaml
