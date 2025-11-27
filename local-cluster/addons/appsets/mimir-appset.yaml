@@ -35,6 +35,12 @@ spec:
           values: |
             mimir:
               structuredConfig:
+                ingester:
+                  ring:
+                    replication_factor: 1
+                store_gateway:
+                  sharding_ring:
+                    replication_factor: 1
                 limits:
                   out_of_order_time_window: 5m
                 memberlist:
