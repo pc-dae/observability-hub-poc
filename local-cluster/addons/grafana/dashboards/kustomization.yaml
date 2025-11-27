@@ -1,8 +1,10 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 
-resources:
-  - https://github.com/dotdc/grafana-dashboards-kubernetes
+configMapGenerator:
+  - name: otel-host-metrics-dashboard
+    files:
+      - otel-host-metrics.json
 
 commonLabels:
   grafana_dashboard: "1"
