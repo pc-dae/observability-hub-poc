@@ -38,8 +38,7 @@ spec:
               repository: "otel/opentelemetry-collector-contrib"
               tag: "0.139.0"
             mode: daemonset
-            service:
-              enabled: true
+            hostNetwork: true
             extraEnvs:
             - name: K8S_NODE_NAME
               valueFrom:
@@ -75,6 +74,10 @@ spec:
                   scrapers:
                     cpu: {}
                     memory: {}
+                    load: {}
+                    network: {}
+                    disk: {}
+                    filesystem: {}
                 kubeletstats:
                   insecure_skip_verify: true
               processors:
