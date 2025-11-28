@@ -42,10 +42,14 @@ spec:
             - name: local-ca
               configMap:
                 name: local-ca
+            - name: otel-storage
+              emptyDir: {}
             extraVolumeMounts:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
               subPath: CA.cer
+            - name: otel-storage
+              mountPath: /var/lib/otelcol
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
@@ -61,6 +65,14 @@ spec:
                 enabled: true 
               
             config:
+              extensions:
+                file_storage:
+                  directory: /var/lib/otelcol/file_storage
+                  timeout: 1s
+                  compaction:
+                    on_start: true
+                    directory: /var/lib/otelcol/file_storage_compaction
+
               receivers:
                 otlp:
                   protocols:
@@ -73,7 +85,9 @@ spec:
                   auth_type: serviceAccount
               
               processors:
-                batch: {}
+                batch:
+                  timeout: 1s
+                  send_batch_size: 1024
                 memory_limiter:
                   check_interval: 1s
                   limit_percentage: 75
@@ -82,24 +96,43 @@ spec:
               exporters:
                 otlphttp/mimir:
                   endpoint: "https://mimir.{{.dnsSuffix}}/otlp"
+                  sending_queue:
+                    enabled: true
+                    storage: file_storage
+                  retry_on_failure:
+                    enabled: true
+                    initial_interval: 5s
+                    max_interval: 30s
+                    max_elapsed_time: 300s
                   headers:
                     X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/loki:
                   endpoint: "https://loki.{{.dnsSuffix}}/otlp"
+                  sending_queue:
+                    enabled: true
+                    storage: file_storage
+                  retry_on_failure:
+                    enabled: true
                   headers:
                     X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/tempo:
                   endpoint: "https://tempo.{{.dnsSuffix}}"
+                  sending_queue:
+                    enabled: true
+                    storage: file_storage
+                  retry_on_failure:
+                    enabled: true
                   headers:
                     X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
 
               service:
+                extensions: [file_storage]
                 pipelines:
                   traces:
                     receivers: [otlp]

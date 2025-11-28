@@ -45,6 +45,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            # Keep CA volume just in case
             extraVolumes:
             - name: local-ca
               configMap:
@@ -53,12 +54,6 @@ spec:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
               subPath: CA.cer
-            hostAliases:
-            - ip: '{{.clusterIP}}'
-              hostnames:
-              - mimir.{{.dnsSuffix}}
-              - loki.{{.dnsSuffix}}
-              - tempo.{{.dnsSuffix}}
             presets:
               logsCollection:
                 enabled: true
@@ -66,7 +61,7 @@ spec:
               hostMetrics:
                 enabled: true
               kubeletMetrics:
-                enabled: true
+                enabled: false # Disable standard kubeletstats receiver in favor of direct prometheus scrape for compatibility
               kubernetesAttributes:
                 enabled: true
             config:
@@ -80,8 +75,38 @@ spec:
                     network: {}
                     disk: {}
                     filesystem: {}
-                kubeletstats:
-                  insecure_skip_verify: true
+                
+                # Scrape cAdvisor directly to get container_... metrics for standard dashboards
+                prometheus:
+                  config:
+                    scrape_configs:
+                      - job_name: 'kubernetes-cadvisor'
+                        scheme: https
+                        tls_config:
+                          ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+                          insecure_skip_verify: true
+                        bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
+                        kubernetes_sd_configs:
+                        - role: node
+                        relabel_configs:
+                        # Only scrape the node this agent is running on
+                        - source_labels: [__meta_kubernetes_node_name]
+                          action: keep
+                          regex: ${env:K8S_NODE_NAME}
+                        - action: labelmap
+                          regex: __meta_kubernetes_node_label_(.+)
+                        - target_label: __address__
+                          replacement: kubernetes.default.svc:443
+                        - source_labels: [__meta_kubernetes_node_name]
+                          regex: (.+)
+                          target_label: __metrics_path__
+                          replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+                        metric_relabel_configs:
+                          # Drop high cardinality labels or unused metrics if needed
+                          - source_labels: [__name__]
+                            regex: 'container_tasks_state|container_memory_failures_total'
+                            action: drop
+
               processors:
                 transform:
                   error_mode: ignore
@@ -148,7 +173,7 @@ spec:
                     processors: [memory_limiter, batch]
                     exporters: [otlp]
                   metrics:
-                    receivers: [otlp, kubeletstats, hostmetrics]
+                    receivers: [prometheus, hostmetrics]
                     processors: [memory_limiter, k8sattributes, resource/set_unique_host, transform, batch]
                     exporters: [otlp]
                   logs:
