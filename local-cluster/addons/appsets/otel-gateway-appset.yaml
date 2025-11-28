@@ -139,7 +139,7 @@ spec:
                     ca_file: /etc/ssl/certs/ca.crt
 
               service:
-                extensions: [file_storage]
+                extensions: [file_storage, health_check]
                 pipelines:
                   traces:
                     receivers: [otlp]
