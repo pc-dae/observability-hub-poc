@@ -73,6 +73,7 @@ spec:
               
             config:
               extensions:
+                health_check: {}
                 file_storage:
                   directory: /var/lib/otelcol/file_storage
                   create_directory: true
@@ -140,7 +141,7 @@ spec:
                     ca_file: /etc/ssl/certs/ca.crt
 
               service:
-                extensions: [file_storage]
+                extensions: [file_storage, health_check]
                 pipelines:
                   traces:
                     receivers: [otlp]
