@@ -1,0 +1,127 @@
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: otel-gateway
+  namespace: argocd
+spec:
+  goTemplate: true
+  goTemplateOptions: ["missingkey=error"]
+  generators:
+  - matrix:
+      generators:
+        - list:
+            elements:
+              - name: otel-gateway
+                namespace: otel-collector
+                chart: opentelemetry-collector
+                repo: https://open-telemetry.github.io/opentelemetry-helm-charts
+                version: 0.139.1
+        - git:
+            repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+            revision: main
+            files:
+              - path: "local-cluster/config/cluster-params.yaml"
+  template:
+    metadata:
+      name: '{{.name}}'
+      namespace: argocd
+    spec:
+      project: default
+      source:
+        repoURL: '{{.repo}}'
+        chart: '{{.chart}}'
+        targetRevision: '{{.version}}'
+        helm:
+          values: |
+            fullnameOverride: otel-gateway
+            mode: deployment
+            image:
+              repository: "otel/opentelemetry-collector-contrib"
+              tag: "0.139.0"
+            hostNetwork: true
+            extraVolumes:
+            - name: local-ca
+              configMap:
+                name: local-ca
+            extraVolumeMounts:
+            - name: local-ca
+              mountPath: /etc/ssl/certs/ca.crt
+              subPath: CA.cer
+            hostAliases:
+            - ip: '{{.clusterIP}}'
+              hostnames:
+              - mimir.{{.dnsSuffix}}
+              - loki.{{.dnsSuffix}}
+              - tempo.{{.dnsSuffix}}
+            service:
+              enabled: true
+              type: ClusterIP
+            
+            presets:
+              clusterMetrics:
+                enabled: true 
+              
+            config:
+              receivers:
+                otlp:
+                  protocols:
+                    grpc:
+                      endpoint: 0.0.0.0:4317
+                    http:
+                      endpoint: 0.0.0.0:4318
+                k8s_cluster:
+                  collection_interval: 10s
+                  auth_type: serviceAccount
+              
+              processors:
+                batch: {}
+                memory_limiter:
+                  check_interval: 1s
+                  limit_percentage: 75
+                  spike_limit_percentage: 15
+
+              exporters:
+                otlphttp/mimir:
+                  endpoint: "https://mimir.{{.dnsSuffix}}/otlp"
+                  headers:
+                    X-Scope-OrgID: "fake"
+                  tls:
+                    ca_file: /etc/ssl/certs/ca.crt
+                otlphttp/loki:
+                  endpoint: "https://loki.{{.dnsSuffix}}/otlp"
+                  headers:
+                    X-Scope-OrgID: "fake"
+                  tls:
+                    ca_file: /etc/ssl/certs/ca.crt
+                otlphttp/tempo:
+                  endpoint: "https://tempo.{{.dnsSuffix}}"
+                  headers:
+                    X-Scope-OrgID: "fake"
+                  tls:
+                    ca_file: /etc/ssl/certs/ca.crt
+
+              service:
+                pipelines:
+                  traces:
+                    receivers: [otlp]
+                    processors: [memory_limiter, batch]
+                    exporters: [otlphttp/tempo]
+                  metrics:
+                    receivers: [otlp, k8s_cluster]
+                    processors: [memory_limiter, batch]
+                    exporters: [otlphttp/mimir]
+                  logs:
+                    receivers: [otlp]
+                    processors: [memory_limiter, batch]
+                    exporters: [otlphttp/loki]
+      destination:
+        server: 'https://kubernetes.default.svc'
+        namespace: '{{.namespace}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true
+        syncOptions:
+        - CreateNamespace=true
+        - Replace=true
+
