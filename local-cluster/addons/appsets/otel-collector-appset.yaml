@@ -54,15 +54,6 @@ spec:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
               subPath: CA.cer
-            clusterRole:
-              create: true
-              rules:
-              - apiGroups: [""]
-                resources: ["nodes/stats", "nodes/proxy", "nodes", "namespaces", "pods"]
-                verbs: ["get", "watch", "list"]
-              - apiGroups: ["apps"]
-                resources: ["replicasets"]
-                verbs: ["get", "watch", "list"]
             presets:
               logsCollection:
                 enabled: true
@@ -93,7 +84,7 @@ spec:
                         scheme: https
                         tls_config:
                           ca_file: /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
-                          insecure_skip_verify: true
+                  insecure_skip_verify: true
                         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
                         kubernetes_sd_configs:
                         - role: node
@@ -109,7 +100,7 @@ spec:
                         - source_labels: [__meta_kubernetes_node_name]
                           regex: (.+)
                           target_label: __metrics_path__
-                          replacement: /api/v1/nodes/${1}/proxy/metrics/cadvisor
+                          replacement: /api/v1/nodes/$$1/proxy/metrics/cadvisor
                         metric_relabel_configs:
                           # Drop high cardinality labels or unused metrics if needed
                           - source_labels: [__name__]

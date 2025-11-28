@@ -139,7 +139,7 @@ spec:
                     ca_file: /etc/ssl/certs/ca.crt
 
               service:
-                extensions: [file_storage, health_check]
+                extensions: [file_storage]
                 pipelines:
                   traces:
                     receivers: [otlp]
@@ -163,4 +163,3 @@ spec:
         syncOptions:
         - CreateNamespace=true
         - Replace=true
-
