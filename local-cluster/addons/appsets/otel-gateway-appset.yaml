@@ -34,7 +34,7 @@ spec:
         helm:
           values: |
             fullnameOverride: otel-gateway
-            mode: deployment
+            mode: statefulset
             image:
               repository: "otel/opentelemetry-collector-contrib"
               tag: "0.139.0"
@@ -42,14 +42,21 @@ spec:
             - name: local-ca
               configMap:
                 name: local-ca
-            - name: otel-storage
-              emptyDir: {}
             extraVolumeMounts:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
               subPath: CA.cer
             - name: otel-storage
               mountPath: /var/lib/otelcol
+            statefulset:
+              volumeClaimTemplates:
+              - metadata:
+                  name: otel-storage
+                spec:
+                  accessModes: [ "ReadWriteOnce" ]
+                  resources:
+                    requests:
+                      storage: 1Gi
             hostAliases:
             - ip: '{{.clusterIP}}'
               hostnames:
