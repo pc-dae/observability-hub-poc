@@ -38,7 +38,6 @@ spec:
             image:
               repository: "otel/opentelemetry-collector-contrib"
               tag: "0.139.0"
-            hostNetwork: true
             extraVolumes:
             - name: local-ca
               configMap:
