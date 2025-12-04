@@ -270,6 +270,13 @@ else
   kubectl apply -f local-cluster/core/kyverno-policies/argocd-image-pull-policy.yaml
 fi
 
+if kubectl get clusterpolicy update-bitnami-image-policy >/dev/null 2>&1; then
+  echo "Kyverno policy 'update-bitnami-image-policy' already exists. Skipping apply."
+else
+  echo "Applying Kyverno policy to update bitnami images..."
+  kubectl apply -f local-cluster/core/kyverno-policies/update-bitnami-image-policy.yaml
+fi
+
 echo "Installing Argo CD..."
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
