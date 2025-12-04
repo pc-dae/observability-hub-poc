@@ -54,6 +54,14 @@ spec:
             - name: local-ca
               mountPath: /etc/ssl/certs/ca.crt
               subPath: CA.cer
+            clusterRole:
+              create: true
+              rules:
+              - apiGroups: [""]
+                resources: ["nodes", "nodes/proxy", "nodes/metrics", "services", "endpoints", "pods"]
+                verbs: ["get", "list", "watch"]
+              - nonResourceURLs: ["/metrics", "/metrics/cadvisor"]
+                verbs: ["get"]
             presets:
               logsCollection:
                 enabled: true
