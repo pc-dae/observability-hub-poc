@@ -12,8 +12,8 @@ spec:
         - name: victoria-metrics
           namespace: victoria-metrics
           chart: victoria-metrics-cluster
-          repo: https://victoria-metrics.github.io/helm-charts
-          version: 0.12.0
+          repo: https://victoriametrics.github.io/helm-charts
+          version: 0.30.1
   template:
     metadata:
       name: '{{.name}}'
