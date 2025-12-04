@@ -4,4 +4,6 @@ resources:
 - csi/application.yaml
 - external-secrets/application.yaml
 - reloader/application.yaml
+- ../../kyverno-policies/application.yaml
+- kyverno/application.yaml
 

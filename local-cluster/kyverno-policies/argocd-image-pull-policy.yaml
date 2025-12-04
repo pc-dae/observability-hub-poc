@@ -1,0 +1,23 @@
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: argocd-image-pull-policy
+spec:
+  rules:
+  - name: "Set ImagePullPolicy to IfNotPresent for argocd namespace"
+    match:
+      any:
+      - resources:
+          kinds:
+          - Pod
+          namespaces:
+          - argocd
+    mutate:
+      patchStrategicMerge:
+        spec:
+          containers:
+          - (image): "*:*"
+            imagePullPolicy: "IfNotPresent"
+          initContainers:
+          - (image): "*:*"
+            imagePullPolicy: "IfNotPresent"
