@@ -248,17 +248,27 @@ function config_argocd_ingress() {
 
 echo "Waiting for cluster to be ready"
 kubectl wait --for=condition=Available  -n kube-system deployment coredns
-# The minus sign (-) at the end removes the taint
-kubectl taint nodes desktop-control-plane node-role.kubernetes.io/control-plane:NoSchedule- || true
+if kubectl describe node desktop-control-plane | grep -q "node-role.kubernetes.io/control-plane:NoSchedule"; then
+  echo "Removing control-plane taint..."
+  kubectl taint nodes desktop-control-plane node-role.kubernetes.io/control-plane:NoSchedule-
+fi
 
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
 
-echo "Installing Kyverno..."
-kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
+if kubectl get namespace kyverno >/dev/null 2>&1; then
+  echo "Kyverno namespace already exists. Skipping installation."
+else
+  echo "Installing Kyverno..."
+  kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
+fi
 echo "Waiting for Kyverno admission controller to be ready..." 
 kubectl wait --for=condition=Available -n kyverno deployment/kyverno-admission-controller --timeout=5m
-echo "Applying Kyverno policy for Argo CD..."
-kubectl apply -f local-cluster/corekyverno-policies/argocd-image-pull-policy.yaml
+if kubectl get clusterpolicy argocd-image-pull-policy >/dev/null 2>&1; then
+  echo "Kyverno policy 'argocd-image-pull-policy' already exists. Skipping apply."
+else
+  echo "Applying Kyverno policy for Argo CD..."
+  kubectl apply -f local-cluster/core/kyverno-policies/argocd-image-pull-policy.yaml
+fi
 
 echo "Installing Argo CD..."
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
