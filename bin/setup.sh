@@ -259,7 +259,10 @@ if kubectl get namespace kyverno >/dev/null 2>&1; then
   echo "Kyverno namespace already exists. Skipping installation."
 else
   echo "Installing Kyverno..."
-  kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
+  # Patching the install manifest to use bitnamilegacy/kubectl due to bitnami repo changes
+  curl -sL https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml | \
+  sed 's|bitnami/kubectl|bitnamilegacy/kubectl|g' | \
+  kubectl apply --server-side -f -
 fi
 echo "Waiting for Kyverno admission controller to be ready..." 
 kubectl wait --for=condition=Available -n kyverno deployment/kyverno-admission-controller --timeout=5m
