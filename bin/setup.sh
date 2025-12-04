@@ -258,7 +258,7 @@ kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/downl
 echo "Waiting for Kyverno admission controller to be ready..." 
 kubectl wait --for=condition=Available -n kyverno deployment/kyverno-admission-controller --timeout=5m
 echo "Applying Kyverno policy for Argo CD..."
-kubectl apply -f local-cluster/kyverno-policies/argocd-image-pull-policy.yaml
+kubectl apply -f local-cluster/corekyverno-policies/argocd-image-pull-policy.yaml
 
 echo "Installing Argo CD..."
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
@@ -283,6 +283,8 @@ fi
 setup_cluster_params
 
 apply_and_wait "local-cluster/namespaces/application.yaml"
+
+apply_and_wait "local-cluster/kyverno-policies.yaml"
 
 kubectl apply -f - <<EOF
 apiVersion: v1
