@@ -13,6 +13,29 @@ spec:
     targetRevision: v3.2.4 # Use a specific version for stability
     helm:
       releaseName: kyverno
+      values: |
+        webhooksCleanup:
+          image:
+            repository: bitnamilegacy/kubectl
+        policyReportsCleanup:
+          image:
+            repository: bitnamilegacy/kubectl
+        cleanupJobs:
+          admissionReports:
+            image:
+              repository: bitnamilegacy/kubectl
+          clusterAdmissionReports:
+            image:
+              repository: bitnamilegacy/kubectl
+          updateRequests:
+            image:
+              repository: bitnamilegacy/kubectl
+          ephemeralReports:
+            image:
+              repository: bitnamilegacy/kubectl
+          clusterEphemeralReports:
+            image:
+              repository: bitnamilegacy/kubectl
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kyverno
