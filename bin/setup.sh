@@ -252,6 +252,15 @@ kubectl wait --for=condition=Available  -n kube-system deployment coredns
 kubectl taint nodes desktop-control-plane node-role.kubernetes.io/control-plane:NoSchedule- || true
 
 kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+
+echo "Installing Kyverno..."
+kubectl apply --server-side -f https://github.com/kyverno/kyverno/releases/download/v1.11.1/install.yaml
+echo "Waiting for Kyverno admission controller to be ready..." 
+kubectl wait --for=condition=Available -n kyverno deployment/kyverno-admission-controller --timeout=5m
+echo "Applying Kyverno policy for Argo CD..."
+kubectl apply -f local-cluster/kyverno-policies/argocd-image-pull-policy.yaml
+
+echo "Installing Argo CD..."
 kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 
 echo "Waiting for argocd controller to start"
