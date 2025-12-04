@@ -253,7 +253,7 @@ if kubectl describe node desktop-control-plane | grep -q "node-role.kubernetes.i
   kubectl taint nodes desktop-control-plane node-role.kubernetes.io/control-plane:NoSchedule-
 fi
 
-kubectl create namespace argocd --dry-run=client -o yaml | kubectl apply -f -
+kubectl apply -f local-cluster/core/argocd/argocd-ns.yaml
 
 if kubectl get namespace kyverno >/dev/null 2>&1; then
   echo "Kyverno namespace already exists. Skipping installation."
