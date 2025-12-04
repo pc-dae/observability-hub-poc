@@ -10,7 +10,7 @@ spec:
   source:
     repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
     targetRevision: main
-    path: local-cluster/corekyverno-policies
+    path: local-cluster/core/kyverno-policies
   destination:
     server: 'https://kubernetes.default.svc'
     namespace: kyverno
