@@ -45,6 +45,11 @@ export VAULT_TOKEN="$(jq -r '.root_token' resources/.vault-init.json)"
 
 set +e
 
+if vault policy read $tls_skip admin >/dev/null 2>&1; then
+  echo "Admin policy already exists. Exiting."
+  exit 0
+fi
+
 vault policy write $tls_skip admin - << EOF
 path "*" {
   capabilities = ["create", "read", "update", "patch", "delete", "list", "sudo"]
