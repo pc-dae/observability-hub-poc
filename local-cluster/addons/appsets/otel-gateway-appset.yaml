@@ -128,6 +128,10 @@ spec:
                     X-Scope-OrgID: "fake"
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
+                prometheusremotewrite:
+                  endpoint: "https://victoria-metrics.{{.dnsSuffix}}/insert/0/prometheus/api/v1/write"
+                  tls:
+                    ca_file: /etc/ssl/certs/ca.crt
                 otlphttp/tempo:
                   endpoint: "https://tempo.{{.dnsSuffix}}"
                   sending_queue:
@@ -150,7 +154,7 @@ spec:
                   metrics:
                     receivers: [otlp, k8s_cluster]
                     processors: [memory_limiter, batch]
-                    exporters: [otlphttp/mimir]
+                    exporters: [otlphttp/mimir, prometheusremotewrite]
                   logs:
                     receivers: [otlp]
                     processors: [memory_limiter, batch]
