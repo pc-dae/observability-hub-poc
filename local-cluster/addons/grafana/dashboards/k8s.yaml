@@ -10,7 +10,7 @@ metadata:
   finalizers:
   - resources-finalizer.argocd.argoproj.io
 spec:
-  project: default # You may need to change this!
+  project: default
   source:
     path: ./
     repoURL: https://github.com/dotdc/grafana-dashboards-kubernetes
@@ -18,9 +18,8 @@ spec:
 
   destination:
     server: https://kubernetes.default.svc
-    namespace: monitoring
+    namespace: grafana
   syncPolicy:
-    ## https://argo-cd.readthedocs.io/en/stable/user-guide/auto_sync
     automated:
       prune: true
       selfHeal: true
