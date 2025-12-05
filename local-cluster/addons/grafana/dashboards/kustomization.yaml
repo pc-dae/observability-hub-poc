@@ -5,6 +5,7 @@ configMapGenerator:
   - name: kubernetes-cluster-dashboard
     files:
       - kubernetes-cluster.json
+      - otel-host-metrics.json
 
 commonLabels:
   grafana_dashboard: "1"
