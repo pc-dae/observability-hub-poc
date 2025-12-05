@@ -10,7 +10,6 @@ namespaces:
  - grafana
  - otel-collector
  - cert-manager
- - victoria-metrics
 
 caCert: |
   -----BEGIN CERTIFICATE-----
