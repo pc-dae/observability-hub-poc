@@ -58,4 +58,6 @@ stringData:
         tlsSkipVerify: true
         httpHeaderName1: "X-Scope-OrgID"
       secureJsonData:
+        tlsCACert: |
+{{ .Values.caCert | nindent 10 }}
         httpHeaderValue1: "fake"
