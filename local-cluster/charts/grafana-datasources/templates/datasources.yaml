@@ -49,3 +49,13 @@ stringData:
         tlsCACert: |
 {{ .Values.caCert | nindent 10 }}
         httpHeaderValue1: "fake"
+    - name: Victoria Metrics
+      type: prometheus
+      uid: victoria-metrics
+      url: http://victoria-metrics-victoria-metrics-cluster-vmselect.victoria-metrics:8481/select/0/prometheus/
+      access: proxy
+      jsonData:
+        tlsSkipVerify: true
+        httpHeaderName1: "X-Scope-OrgID"
+      secureJsonData:
+        httpHeaderValue1: "fake"

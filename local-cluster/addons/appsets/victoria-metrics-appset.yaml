@@ -7,13 +7,20 @@ spec:
   goTemplate: true
   goTemplateOptions: ["missingkey=error"]
   generators:
-  - list:
-      elements:
-        - name: victoria-metrics
-          namespace: victoria-metrics
-          chart: victoria-metrics-cluster
-          repo: https://victoriametrics.github.io/helm-charts
-          version: 0.30.1
+  - matrix:
+      generators:
+        - list:
+            elements:
+              - name: victoria-metrics
+                namespace: victoria-metrics
+                chart: victoria-metrics-cluster
+                repo: https://victoriametrics.github.io/helm-charts
+                version: 0.30.1
+        - git:
+            repoURL: 'https://github.com/pc-dae/observability-hub-poc.git'
+            revision: main
+            files:
+              - path: "local-cluster/config/cluster-params.yaml"
   template:
     metadata:
       name: '{{.name}}'
@@ -30,6 +37,19 @@ spec:
               replicaCount: 2
             vmselect:
               replicaCount: 2
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: ca-issuer
+                hosts:
+                  - name: victoria-metrics.{{.dnsSuffix}}
+                    path:
+                      - /
+                tls:
+                  - secretName: victoria-metrics-tls
+                    hosts:
+                      - victoria-metrics.{{.dnsSuffix}}
             vmstorage:
               replicaCount: 2
       destination:
