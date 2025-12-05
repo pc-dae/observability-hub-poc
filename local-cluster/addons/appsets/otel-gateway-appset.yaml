@@ -63,6 +63,7 @@ spec:
               - mimir.{{.dnsSuffix}}
               - loki.{{.dnsSuffix}}
               - tempo.{{.dnsSuffix}}
+              - victoria-metrics.{{.dnsSuffix}}
             service:
               enabled: true
               type: ClusterIP
