@@ -102,8 +102,8 @@ spec:
                           - targets: ['kube-state-metrics.monitoring.svc:8080']
               
               processors:
-                resource:
-                  attributes:
+                attributes:
+                  actions:
                     - key: cluster
                       value: "local-cluster"
                       action: upsert
@@ -164,7 +164,7 @@ spec:
                     exporters: [otlphttp/tempo]
                   metrics:
                     receivers: [otlp, k8s_cluster, prometheus]
-                    processors: [memory_limiter, resource, batch]
+                    processors: [memory_limiter, attributes, batch]
                     exporters: [otlphttp/mimir, prometheusremotewrite]
                   logs:
                     receivers: [otlp]
