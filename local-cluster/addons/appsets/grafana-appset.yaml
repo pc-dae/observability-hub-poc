@@ -49,6 +49,7 @@ spec:
               - mimir.{{.dnsSuffix}}
               - loki.{{.dnsSuffix}}
               - tempo.{{.dnsSuffix}}
+              - victoria-metrics.{{.dnsSuffix}}
             ingress:
               enabled: true
               ingressClassName: nginx
