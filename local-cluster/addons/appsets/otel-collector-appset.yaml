@@ -92,6 +92,8 @@ spec:
                         scrape_interval: 15s
                         static_configs:
                           - targets: ['localhost:9100']
+                            labels:
+                              instance: '${env:K8S_NODE_NAME}'
                       - job_name: 'kubernetes-cadvisor'
                         scheme: https
                         tls_config:
