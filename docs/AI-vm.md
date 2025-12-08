@@ -1,11 +1,13 @@
 
 ## Request:
-yes please (commit changes to grafana-appset.yaml)
+yes please (commit all changes)
 
 ## Response:
-I will commit and push the changes to `local-cluster/addons/appsets/grafana-appset.yaml`. This adds the missing host alias for VictoriaMetrics to the Grafana deployment, allowing it to resolve the Ingress URL.
+I will commit and push the following changes:
+1.  **Grafana Datasources:** Set VictoriaMetrics as the default datasource.
+2.  **OTEL Gateway:** Added scraping for Kubernetes API Server and CoreDNS (manual changes you made).
 
 ### Actions:
 1.  Running `git status` and `git diff` to verify changes.
-2.  Committing with message "add victoria-metrics host alias to grafana".
+2.  Committing with message "set victoria metrics as default datasource and add k8s apiserver/coredns scraping".
 3.  Pushing to remote.

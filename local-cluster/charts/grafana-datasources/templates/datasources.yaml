@@ -14,7 +14,7 @@ stringData:
       uid: mimir
       url: https://mimir.{{ .Values.dnsSuffix }}/prometheus
       access: proxy
-      isDefault: true
+      isDefault: false
       jsonData:
         tlsSkipVerify: false
         tlsAuthWithCACert: true
@@ -54,6 +54,7 @@ stringData:
       uid: victoria-metrics
       url: https://victoria-metrics.{{ .Values.dnsSuffix }}/select/0/prometheus/
       access: proxy
+      isDefault: true
       jsonData:
         tlsSkipVerify: false
         tlsAuthWithCACert: true
