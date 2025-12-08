@@ -198,3 +198,22 @@ kubectl run curl-mimir-check-6 --image=curlimages/curl -i --tty --rm --restart=N
 # Update otel-gateway-appset.yaml
 # git commit and apply
 ```
+
+## Request
+Screenshot of "Kubernetes / System / API Server" dashboard showing "No data".
+
+## Response
+I identified that the metrics for the Kubernetes API Server are missing because there is no scrape job configured for them.
+I will update `local-cluster/addons/appsets/otel-gateway-appset.yaml` to:
+1.  Add a `clusterRole` configuration to grant the gateway permissions to scrape the API Server (`/metrics`).
+2.  Add a `kubernetes-apiserver` job to the `prometheus` receiver configuration (targeting `kubernetes.default.svc:443`).
+
+Commands executed:
+```bash
+# Update local-cluster/addons/appsets/otel-gateway-appset.yaml
+git add local-cluster/addons/appsets/otel-gateway-appset.yaml
+git commit -m "configure otel-gateway to scrape kubernetes-apiserver"
+git push
+kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+```
