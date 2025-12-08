@@ -110,3 +110,19 @@ kubectl exec -n otel-collector otel-collector-agent-qq2zd -- wget --no-check-cer
 kubectl get pod -n otel-collector otel-collector-agent-qq2zd -o yaml | grep -A 20 "volumes:"
 kubectl get sa -n otel-collector otel-collector -o yaml && head -n 70 local-cluster/addons/appsets/otel-collector-appset.yaml | tail -n 30
 ```
+
+## Request
+Change approves Please commit and apply
+
+## Response
+I committed the changes to `local-cluster/addons/appsets/otel-collector-appset.yaml` and triggered a refresh of the applications.
+I verified that the `otel-collector-agent` pods rolled out successfully and now have the ServiceAccount token mounted (confirmed via `kubectl describe`).
+I also verified that the `kubernetes-cadvisor` job is now successfully scraped and present in Mimir (querying `up` metric showed `job="kubernetes-cadvisor"`).
+
+Commands executed:
+```bash
+git add local-cluster/addons/appsets/otel-collector-appset.yaml && git commit -m "enable automountServiceAccountToken for otel-collector" && git push && kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+kubectl describe -n otel-collector $(kubectl get pods -n otel-collector -l app.kubernetes.io/instance=otel-collector -o name | head -n 1) | grep -A 15 "Mounts:"
+kubectl run curl-mimir-check-3 --image=curlimages/curl -i --tty --rm --restart=Never -- curl -H "X-Scope-OrgID: fake" "http://mimir-nginx.monitoring.svc/prometheus/api/v1/query?query=up" | grep kubernetes-cadvisor | head -n 5
+```
