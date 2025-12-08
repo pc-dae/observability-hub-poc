@@ -131,6 +131,7 @@ spec:
                         - set(attributes["namespace"], resource.attributes["k8s.namespace.name"])
                         - set(attributes["node"], resource.attributes["k8s.node.name"])
                         - set(attributes["host"], resource.attributes["host.name"])
+                        - set(attributes["cluster"], resource.attributes["cluster"])
                         - set(attributes["container"], resource.attributes["k8s.container.name"])
                         - set(attributes["container_name"], resource.attributes["k8s.container.name"])
                   log_statements:
