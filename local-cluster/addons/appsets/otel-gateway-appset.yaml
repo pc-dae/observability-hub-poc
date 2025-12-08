@@ -102,6 +102,11 @@ spec:
                           - targets: ['kube-state-metrics.monitoring.svc:8080']
               
               processors:
+                resource:
+                  attributes:
+                    - key: cluster
+                      value: "local-cluster"
+                      action: upsert
                 batch:
                   timeout: 1s
                   send_batch_size: 1024
@@ -137,9 +142,7 @@ spec:
                   tls:
                     ca_file: /etc/ssl/certs/ca.crt
                 prometheusremotewrite:
-                  endpoint: "https://victoria-metrics.{{.dnsSuffix}}/insert/0/prometheus/api/v1/write"
-                  tls:
-                    ca_file: /etc/ssl/certs/ca.crt
+                  endpoint: "http://victoria-metrics-victoria-metrics-cluster-vminsert.victoria-metrics.svc:8480/insert/0/prometheus/api/v1/write"
                 otlphttp/tempo:
                   endpoint: "https://tempo.{{.dnsSuffix}}"
                   sending_queue:
@@ -161,7 +164,7 @@ spec:
                     exporters: [otlphttp/tempo]
                   metrics:
                     receivers: [otlp, k8s_cluster, prometheus]
-                    processors: [memory_limiter, batch]
+                    processors: [memory_limiter, resource, batch]
                     exporters: [otlphttp/mimir, prometheusremotewrite]
                   logs:
                     receivers: [otlp]
