@@ -164,3 +164,37 @@ git add local-cluster/addons/appsets/otel-collector-appset.yaml local-cluster/ad
 kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
 kubectl run curl-mimir-check-5 --image=curlimages/curl -i --tty --rm --restart=Never -- curl -H "X-Scope-OrgID: fake" "http://mimir-nginx.monitoring.svc/prometheus/api/v1/query?query=up" | grep -E "job|cluster" | head -n 20
 ```
+
+## Request
+Still not working (screenshot showing "Datasource ${DS_PROMETHEUS} was not found" error in "Deployment Metrics" dashboard).
+
+## Response
+I identified that the dashboard `otel-host-metrics.json` (titled "Deployment Metrics") uses `${DS_PROMETHEUS}` variable but does not define it in the `templating` section. It incorrectly uses `__inputs`, which is ignored during file provisioning.
+I will update the dashboard JSON to:
+1.  Add the `DS_PROMETHEUS` variable definition to the `templating` list.
+2.  Remove the `__inputs` section.
+
+Commands executed:
+```bash
+# Update local-cluster/addons/grafana/dashboards/otel-host-metrics.json
+git add local-cluster/addons/grafana/dashboards/otel-host-metrics.json
+git commit -m "fix(grafana): add DS_PROMETHEUS variable to deployment metrics dashboard"
+git push
+kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl rollout restart deployment grafana -n grafana
+```
+
+## Request
+Screenshot of "Kubernetes / System / API Server" dashboard showing "No data".
+
+## Response
+I identified that the Kubernetes API Server metrics are missing because there is no scrape configuration for them in the collector or gateway.
+I will verify this by querying Mimir for `apiserver_request_total`.
+Then I will update `local-cluster/addons/appsets/otel-gateway-appset.yaml` to add a scrape job for the Kubernetes API Server (targeting `kubernetes.default.svc:443`).
+
+Commands executed:
+```bash
+kubectl run curl-mimir-check-6 --image=curlimages/curl -i --tty --rm --restart=Never -- curl -H "X-Scope-OrgID: fake" "http://mimir-nginx.monitoring.svc/prometheus/api/v1/query?query=count(apiserver_request_total)"
+# Update otel-gateway-appset.yaml
+# git commit and apply
+```
