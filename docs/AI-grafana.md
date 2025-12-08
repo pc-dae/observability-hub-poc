@@ -126,3 +126,23 @@ kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations"
 kubectl describe -n otel-collector $(kubectl get pods -n otel-collector -l app.kubernetes.io/instance=otel-collector -o name | head -n 1) | grep -A 15 "Mounts:"
 kubectl run curl-mimir-check-3 --image=curlimages/curl -i --tty --rm --restart=Never -- curl -H "X-Scope-OrgID: fake" "http://mimir-nginx.monitoring.svc/prometheus/api/v1/query?query=up" | grep kubernetes-cadvisor | head -n 5
 ```
+
+## Request
+Still not working
+
+## Response
+I identified that the `cluster` label is missing from the metrics (including `node-exporter` and `kubernetes-cadvisor`).
+This is because I previously configured the `cluster` tag as a **Resource Attribute**, but Mimir/Prometheus requires it to be a **Metric Label** (Attribute).
+I will update the `transform` processor in `otel-collector-appset.yaml` to explicitly copy the `cluster` resource attribute to the metric attributes.
+I will also update `otel-gateway-appset.yaml` to use an `attributes` processor (instead of `resource` processor) to ensure the label is applied to metrics scraped by the gateway (like KSM).
+
+Commands executed:
+```bash
+# Update otel-collector-appset.yaml to copy cluster attribute
+# Update otel-gateway-appset.yaml to use attributes processor
+git add local-cluster/addons/appsets/otel-collector-appset.yaml local-cluster/addons/appsets/otel-gateway-appset.yaml
+git commit -m "ensure cluster label is applied as metric attribute"
+git push
+kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+```
