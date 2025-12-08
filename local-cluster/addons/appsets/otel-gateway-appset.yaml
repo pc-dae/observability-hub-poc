@@ -113,6 +113,10 @@ spec:
                         bearer_token_file: /var/run/secrets/kubernetes.io/serviceaccount/token
                         static_configs:
                           - targets: ['kubernetes.default.svc:443']
+                      - job_name: 'coredns'
+                        scrape_interval: 15s
+                        static_configs:
+                          - targets: ['kube-dns.kube-system.svc:9153']
                       - job_name: 'kube-state-metrics'
                         scrape_interval: 15s
                         static_configs:
