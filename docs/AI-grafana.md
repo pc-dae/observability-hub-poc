@@ -229,3 +229,29 @@ kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations"
 kubectl rollout status statefulset otel-gateway -n otel-collector
 kubectl run curl-mimir-check-7 --image=curlimages/curl -i --tty --rm --restart=Never -- curl -H "X-Scope-OrgID: fake" "http://mimir-nginx.monitoring.svc/prometheus/api/v1/query?query=up" | grep kubernetes-apiserver | head -n 5
 ```
+
+## Request
+Screenshot of "Kubernetes / System / CoreDNS" dashboard showing "No data".
+
+## Response
+I identified that CoreDNS metrics are missing because there is no scrape job configured for them.
+I will verify the CoreDNS service details in the cluster and then configure `otel-gateway` to scrape the `kube-dns` service in the `kube-system` namespace.
+
+Commands executed:
+```bash
+kubectl get svc -n kube-system
+kubectl run curl-mimir-check-8 --image=curlimages/curl -i --tty --rm --restart=Never -- curl -H "X-Scope-OrgID: fake" "http://mimir-nginx.monitoring.svc/prometheus/api/v1/query?query=count(coredns_dns_request_count_total)"
+# Update otel-gateway-appset.yaml
+# git commit and apply
+```
+
+## Response
+I committed the changes to `local-cluster/addons/appsets/otel-gateway-appset.yaml` to scrape the `coredns` job.
+The gateway should now be collecting metrics from `kube-dns.kube-system.svc:9153`.
+
+Commands executed:
+```bash
+git add local-cluster/addons/appsets/otel-gateway-appset.yaml && git commit -m "configure otel-gateway to scrape coredns" && git push && kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+kubectl rollout status statefulset otel-gateway -n otel-collector
+```
