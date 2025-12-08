@@ -217,3 +217,15 @@ git push
 kubectl rollout restart deployment argocd-repo-server -n argocd
 kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
 ```
+
+## Response
+I committed the changes to `local-cluster/addons/appsets/otel-gateway-appset.yaml` and triggered a refresh.
+I verified that the `otel-gateway` statefulset restarted and is now successfully scraping the Kubernetes API Server (querying `up` metric showed `job="kubernetes-apiserver"` with status 1).
+
+Commands executed:
+```bash
+git add local-cluster/addons/appsets/otel-gateway-appset.yaml && git commit -m "configure otel-gateway to scrape kubernetes-apiserver" && git push && kubectl rollout restart deployment argocd-repo-server -n argocd
+kubectl patch app appsets -n argocd --type merge -p '{"metadata": {"annotations": {"argocd.argoproj.io/refresh": "hard"}}}'
+kubectl rollout status statefulset otel-gateway -n otel-collector
+kubectl run curl-mimir-check-7 --image=curlimages/curl -i --tty --rm --restart=Never -- curl -H "X-Scope-OrgID: fake" "http://mimir-nginx.monitoring.svc/prometheus/api/v1/query?query=up" | grep kubernetes-apiserver | head -n 5
+```
