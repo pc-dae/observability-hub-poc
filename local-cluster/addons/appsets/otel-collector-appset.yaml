@@ -170,6 +170,11 @@ spec:
                     - key: instance
                       value: "${env:K8S_NODE_NAME}"
                       action: upsert
+                resource/set_cluster:
+                  attributes:
+                    - key: cluster
+                      value: "local-cluster"
+                      action: upsert
                 batch: {}
                 memory_limiter:
                   check_interval: 1s
@@ -188,7 +193,7 @@ spec:
                     exporters: [otlp]
                   metrics:
                     receivers: [prometheus, hostmetrics]
-                    processors: [memory_limiter, k8sattributes, resource/set_unique_host, transform, batch]
+                    processors: [memory_limiter, k8sattributes, resource/set_unique_host, resource/set_cluster, transform, batch]
                     exporters: [otlp]
                   logs:
                     receivers: [otlp, filelog]
