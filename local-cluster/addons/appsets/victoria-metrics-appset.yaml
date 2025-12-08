@@ -32,24 +32,9 @@ spec:
         chart: '{{.chart}}'
         targetRevision: '{{.version}}'
         helm:
-               values: |
-                 vminsert:
-                   replicaCount: 2
-                   ingress:
-                     enabled: true
-                     ingressClassName: nginx
-                     annotations:
-                       cert-manager.io/cluster-issuer: local-ca-issuer
-                     hosts:
-                       - name: victoria-metrics.{{.dnsSuffix}}
-                         path:
-                           - /insert
-                     tls:
-                       - secretName: victoria-metrics-tls
-                         hosts:
-                           - victoria-metrics.{{.dnsSuffix}}
-                 vmselect:
-                   replicaCount: 2
+          values: |
+            vminsert:
+              replicaCount: 2
               ingress:
                 enabled: true
                 ingressClassName: nginx
@@ -58,6 +43,22 @@ spec:
                 hosts:
                   - name: victoria-metrics.{{.dnsSuffix}}
                     path:
+                      - /insert
+                tls:
+                  - secretName: victoria-metrics-tls
+                    hosts:
+                      - victoria-metrics.{{.dnsSuffix}}
+            vmselect:
+              replicaCount: 2
+              ingress:
+                enabled: true
+                ingressClassName: nginx
+                annotations:
+                  cert-manager.io/cluster-issuer: local-ca-issuer
+                hosts:
+                  - name: victoria-metrics.{{.dnsSuffix}}
+                    path:
+                      - /select
                       - /
                 tls:
                   - secretName: victoria-metrics-tls
