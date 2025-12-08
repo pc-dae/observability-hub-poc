@@ -93,6 +93,13 @@ spec:
                 k8s_cluster:
                   collection_interval: 10s
                   auth_type: serviceAccount
+                prometheus:
+                  config:
+                    scrape_configs:
+                      - job_name: 'kube-state-metrics'
+                        scrape_interval: 15s
+                        static_configs:
+                          - targets: ['kube-state-metrics.monitoring.svc:8080']
               
               processors:
                 batch:
@@ -153,7 +160,7 @@ spec:
                     processors: [memory_limiter, batch]
                     exporters: [otlphttp/tempo]
                   metrics:
-                    receivers: [otlp, k8s_cluster]
+                    receivers: [otlp, k8s_cluster, prometheus]
                     processors: [memory_limiter, batch]
                     exporters: [otlphttp/mimir, prometheusremotewrite]
                   logs:
