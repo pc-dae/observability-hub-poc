@@ -203,6 +203,152 @@ function wait_for_app() {
   wait_for_app_sync_and_health "$1"
 }
 
+function setup_vm_otel() {
+  local VM_NAME=${1:-"ubuntu-otel"}
+  echo "Setting up Ubuntu VM '$VM_NAME' with OTel Collector..."
+  
+  if ! command -v multipass &> /dev/null; then
+    echo "Multipass could not be found. Please install it to proceed."
+    return
+  fi
+
+  if ! multipass info $VM_NAME &> /dev/null; then
+    echo "Launching $VM_NAME..."
+    multipass launch --name $VM_NAME --cpus 2 --memory 2G --disk 10G
+  else
+    echo "VM $VM_NAME already exists."
+    # Ensure it is running
+    multipass start $VM_NAME 2>/dev/null || true
+  fi
+
+  # Wait for VM to be ready (SSH available)
+  echo "Waiting for VM to be ready..."
+  # A simple check loop
+  while ! multipass exec $VM_NAME -- echo "ready" &> /dev/null; do
+      sleep 2
+  done
+
+  # Get Host IP
+  # Assuming en0 is the main interface on Mac
+  HOST_IP=$(ipconfig getifaddr en0)
+  if [ -z "$HOST_IP" ]; then
+    HOST_IP=$(ipconfig getifaddr en1) # Try Wi-Fi if en0 (ethernet) is empty
+  fi
+  
+  if [ -z "$HOST_IP" ]; then
+    echo "Could not determine Host IP. Skipping /etc/hosts update on VM."
+  else
+    echo "Host IP detected as $HOST_IP"
+    # Update /etc/hosts on VM
+    # We strip existing entry for the domain to avoid duplicates and append the new one
+    multipass exec $VM_NAME -- sudo sh -c "sed -i '/$LOCAL_DNS/d' /etc/hosts && echo '$HOST_IP $LOCAL_DNS' >> /etc/hosts"
+    multipass exec $VM_NAME -- sudo sh -c "sed -i '/mimir.$LOCAL_DNS/d' /etc/hosts && echo '$HOST_IP mimir.$LOCAL_DNS' >> /etc/hosts"
+    multipass exec $VM_NAME -- sudo sh -c "sed -i '/loki.$LOCAL_DNS/d' /etc/hosts && echo '$HOST_IP loki.$LOCAL_DNS' >> /etc/hosts"
+    multipass exec $VM_NAME -- sudo sh -c "sed -i '/tempo.$LOCAL_DNS/d' /etc/hosts && echo '$HOST_IP tempo.$LOCAL_DNS' >> /etc/hosts"
+    multipass exec $VM_NAME -- sudo sh -c "sed -i '/victoria-metrics.$LOCAL_DNS/d' /etc/hosts && echo '$HOST_IP victoria-metrics.$LOCAL_DNS' >> /etc/hosts"
+  fi
+
+  # Install OTel Collector
+  echo "Installing OTel Collector on VM..."
+  multipass exec $VM_NAME -- sudo sh -c "apt-get update && apt-get install -y curl"
+  
+  # Check if already installed
+  if ! multipass exec $VM_NAME -- dpkg -l otelcol-contrib &> /dev/null; then
+      ARCH=$(multipass exec $VM_NAME -- dpkg --print-architecture)
+      echo "VM Architecture: $ARCH"
+      
+      OTEL_VERSION="0.114.0" # Using a known stable version
+      DEB_URL="https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v${OTEL_VERSION}/otelcol-contrib_${OTEL_VERSION}_linux_${ARCH}.deb"
+      
+      echo "Downloading OTel Collector from $DEB_URL"
+      multipass exec $VM_NAME -- sudo sh -c "curl -L $DEB_URL -o otelcol.deb"
+      multipass exec $VM_NAME -- sudo sh -c "dpkg -i otelcol.deb || apt-get install -f -y"
+  else
+      echo "OTel Collector already installed."
+  fi
+
+  # Copy CA Cert
+  echo "Transferring CA Certificate..."
+  # We need to ensure CA.cer exists locally which is handled by setup.sh earlier
+  if [ -f resources/CA.cer ]; then
+      multipass transfer resources/CA.cer $VM_NAME:ca.crt
+      multipass exec $VM_NAME -- sudo mv ca.crt /etc/otelcol-contrib/ca.crt
+      multipass exec $VM_NAME -- sudo chmod 644 /etc/otelcol-contrib/ca.crt
+  else
+      echo "Warning: resources/CA.cer not found. TLS validation might fail."
+  fi
+
+  # Create OTel Config
+  echo "Configuring OTel Collector..."
+  cat <<EOF > resources/otel-vm-config.yaml
+receivers:
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+      memory:
+      load:
+      disk:
+      filesystem:
+      network:
+  filelog:
+    include: [ /var/log/syslog, /var/log/auth.log, /var/log/kern.log ]
+    start_at: end
+
+processors:
+  batch:
+  resourcedetection:
+    detectors: [system]
+    timeout: 2s
+    override: false
+  resource:
+    attributes:
+    - key: service.name
+      value: ubuntu-vm
+      action: insert
+    - key: host.name
+      value: $VM_NAME
+      action: insert
+
+exporters:
+  otlphttp/mimir:
+    endpoint: "https://mimir.$LOCAL_DNS/otlp"
+    headers:
+      X-Scope-OrgID: "fake"
+    tls:
+      ca_file: /etc/otelcol-contrib/ca.crt
+  otlphttp/loki:
+    endpoint: "https://loki.$LOCAL_DNS/otlp"
+    headers:
+      X-Scope-OrgID: "fake"
+    tls:
+      ca_file: /etc/otelcol-contrib/ca.crt
+
+service:
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      processors: [resourcedetection, resource, batch]
+      exporters: [otlphttp/mimir]
+    logs:
+      receivers: [filelog]
+      processors: [resourcedetection, resource, batch]
+      exporters: [otlphttp/loki]
+EOF
+
+  multipass transfer resources/otel-vm-config.yaml $VM_NAME:config.yaml
+  multipass exec $VM_NAME -- sudo mv config.yaml /etc/otelcol-contrib/config.yaml
+  multipass exec $VM_NAME -- sudo chmod 644 /etc/otelcol-contrib/config.yaml
+  rm resources/otel-vm-config.yaml
+
+  # Restart Service
+  echo "Restarting OTel Collector Service..."
+  multipass exec $VM_NAME -- sudo systemctl restart otelcol-contrib
+  multipass exec $VM_NAME -- sudo systemctl enable otelcol-contrib
+  
+  echo "VM Setup Complete."
+}
+
 function config_argocd_ingress() {
   local expected_url="https://argocd.${LOCAL_DNS}"
   local current_url=$(kubectl get configmap argocd-cm -n argocd -o jsonpath='{.data.url}' 2>/dev/null)
@@ -388,3 +534,6 @@ setup_grafana_password
 
 # Apply appsets
 apply_and_wait "local-cluster/addons-appsets.yaml"
+
+setup_vm_otel "vm-one"
+
